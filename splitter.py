@@ -12,11 +12,33 @@ selected_element_for_chapters = ""
 selected_attrib_for_chapters = ""
 offset = 0
 
+# define help function
+def help_screen():
+    print("""
+    
+        Some useful concepts:
+
+            Current File: From Menu Option 1, this is the file you want to work on.
+
+            Current Element: From Menu Option 2, this is the element that demarcates chapter boundaries.
+
+            Current Attirbute: From Menu Option 2, this is the attribute that specifies which elements are to be used for chapter boundaries. 
+                                (e.g. <div class="chapter"> and not <div id="the_nothing">.)
+            
+            Current Offset: From Menu Option 3, this is the number of your chosen element that should be skipped before writing chapters.
+                                Why? Because sometimes encoders use the same elements for unrelated, extra-textual matters.                    
+             
+    """)
+    choice = input("\nPress enter to return to the main menu")
+    if choice is not None:
+        menu()
+
 # define our clear function
 def screen_clear():
     #see: https://student.cs.uwaterloo.ca/~cs452/terminal.html
     print("\033[H\033[J")
 
+# generate a list of files in input/
 def generate_input_list():
     screen_clear()
     i = 1
@@ -88,6 +110,8 @@ def get_menu_choice():
     elif choice.lower() == 'e':
         selected_element_for_chapters = ""
         menu()
+    elif choice.lower() == 'h':
+        help_screen()
     elif choice.lower() == 'o':
         offset = 0
         menu()
@@ -313,6 +337,7 @@ def menu():
     print("A.\tClear Current Attribute Choice")
     print("E.\tClear Current Element Choice")
     print("O.\tClear Current Offset")
+    print("H.\tHelp!")
     print("Q.\tQuit")
     print("\n")
     get_menu_choice()
