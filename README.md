@@ -17,6 +17,9 @@ This is not a perfect system, and improvements are being devised.  One obvious c
 
 Take [this book](https://www.gutenberg.org/files/68033/68033-h/68033-h.htm) (please). This book uses `<div class="chapter">`, but then only encloses titles in these sections. Books like this require a bit more planning in order to get both title and chapter content.
 
+### Caveat
+This program isn't _automatic_ as such, as you are still needed to choose an element/attribute to demarcate chapters. But it is hoped that this will one day be improved.  As is, this will still save you flipping through your HTML looking for meaningful elements, and writing a custom script for each text... at least, I hope so. :)
+
 ### Ok, Ok, but how do I use it?!
 
 The Setup:
