@@ -19,7 +19,7 @@ Take [this book](https://www.gutenberg.org/files/68033/68033-h/68033-h.htm) (ple
 
 ### Ok, Ok, but how do I use it?!
 
-Using the program is a four-part process.
+The Setup:
 
 0. Install the program:
     - Create a new virtual environment to hold this.
@@ -28,7 +28,7 @@ Using the program is a four-part process.
 1. Drop any HTML formatted book into the input folder, or use one of the built-ins.
 2. Execute the program via `python3 ./splitter.py`
 
-Now that the program is running...
+Now that the program is running...using the program is a four-part process.
 
 1. Choose a file to work with.
 2. Analyze the file to see what element/attribute you want to select for chapter detection.
