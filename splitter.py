@@ -262,9 +262,22 @@ def see_samples_of_non_container_element(the_file, element, attribute):
 
     samples = soup.find_all(element, attribute)
     temp_samples = []
-    for sample in samples:
-        temp_samples.append(sample.get_text())
 
+    #Check that sample has text, if it doesn't then look to the next element (and its children) to see if we can find something.
+    for sample in samples:
+        if sample.get_text():
+            temp_samples.append(sample.get_text())
+        else:
+            sample = sample.next_element
+            #TODO: Anything that isn't nothing or a space will count. Might want to revisit.
+            if len(sample.get_text()) > 1:
+                temp_samples.append(sample.get_text())
+            else:
+                #Ok, next element was a dud. Does it have kids?
+                for child in sample.next_element.children:
+                    if len(child.get_text()) > 1:
+                        temp_samples.append(child.get_text())
+                        break
     if len(temp_samples) > 10:
         for item in temp_samples[:10]:
             print(f"Item number {j}: " + item + "\n")
@@ -301,9 +314,7 @@ def see_samples_of_container_element(the_file, element, attribute):
             print(f"Item number {j}: " + item[0:100] + "...\n")
             j += 1
 
-    choice = input("\nPress enter to return to the main menu")
-    if choice is not None:
-        menu()
+    get_offset_choice(element)
 
 def generate_menu_meta_table():
     the_file = chosen_file
@@ -369,17 +380,20 @@ def process_html(the_file, element, attrib, off):
         if element in container_elems:
             #Since we have known chapter divisions, we can start numbering at 1.
             #TODO: evaluate this more thoroughly
-            process_container_element(output_dir, elements)
+            process_container_element(off, output_dir, elements)
         else:
             process_non_container_element(off, output_dir, elements)
 
 def process_non_container_element(off, output_dir, elements):
+    global selected_attrib_for_chapters
+    global selected_element_for_chapters
+
     chapter_content = ""
     i = (1 - off)
     for elem in list(elements):
         chapter_content += elem.get_text()
         for sibling in elem.next_siblings:
-            if sibling.name == f'{selected_element_for_chapters}' or sibling.name == 'pre' or sibling.next_sibling == None:
+            if sibling.next_element.name == f'{selected_element_for_chapters}' or sibling.name == 'pre' or sibling.next_sibling == None:
                 if i > 0:
                     with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                         output_file.write(chapter_content)
@@ -389,17 +403,22 @@ def process_non_container_element(off, output_dir, elements):
             else:
                 chapter_content += sibling.get_text()
 
-def process_container_element(output_dir, elements):
+def process_container_element(off, output_dir, elements):
     chapter_content = ""
-    i = 1
+    i = (1 - off)
 
     for elem in list(elements):
         chapter_content += elem.get_text()
         for child in elem.children:
-            chapter_content += child.get_text()
+            if selected_attrib_for_chapters != "":
+                if child.next_element.name == selected_element_for_chapters:
+                    if not child.next_element.has_attr(selected_attrib_for_chapters):
+                        chapter_content += child.get_text()
+                else:
+                    if i > 0:
+                        with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                            output_file.write(chapter_content)
 
-        with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-            output_file.write(chapter_content)
         i += 1
         chapter_content = ""
 
