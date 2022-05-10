@@ -1,0 +1,7 @@
+# Deal with sample preview for elements like <hr> that are self-closing (get siblings instead)
+
+# Create handler to select type of sample view (container v. non)
+
+# Texts like this have busted HTML (divs marked chapter that are just headings, and the siblings are the meat). Handle it.
+# https://www.gutenberg.org/files/68033/68033-h/68033-h.htm
+# Also busted: https://www.gutenberg.org/files/68034/68034-h/68034-h.htm (need siblings from <hr> elements to get chapters...)
