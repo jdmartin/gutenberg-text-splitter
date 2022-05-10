@@ -1,9 +1,8 @@
 # gutenberg-text-splitter
-Experimental tool for splitting texts from Project Gutenberg into chapters
 
 ### What is this?
 
-This program aims to allow you to download an HTML version of a book on [Project Gutenberg](https://www.gutenberg.org/) and separate it into chapters for further processing.
+This program aims to allow you to download an HTML version of a book on [Project Gutenberg](https://www.gutenberg.org/) and separate it into chapters for further processing without too much hassle...
 
 ### Assumptions
 Right now, the code works well with well-formed HTML.  So, it is assumed you are using a document that is well-formed.
