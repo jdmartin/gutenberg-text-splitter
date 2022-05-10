@@ -55,9 +55,16 @@ def generate_input_list():
     input_files["C"] = "Clear selection"
     input_files["M"] = "Return to Main Menu"
 
-    print("\n")
+    table = Table(title=f"Source Files", show_lines=True)
+    table.add_column("Option", style="cyan", no_wrap=True)
+    table.add_column("File", justify="left", style="magenta")
+    
     for item,value in input_files.items():
-        print(str(item) + ":\t" + value)
+        table.add_row(str(item), value)
+    
+    console = Console()
+    console.print(table)
+    
     print("\n")
 
     get_file_choice()
@@ -70,10 +77,10 @@ def get_file_choice():
     global offset
 
     choice = input("Enter the number of the file you'd like to use: ")
-    if choice == "C":
+    if choice.lower() == "c":
         chosen_file = ""
         menu()
-    elif choice == "M":
+    elif choice.lower() == "m":
         #Don't erase a choice if it exists, but pass an empty value if it doesn't
         menu()
     elif choice in str(input_files.keys()):
