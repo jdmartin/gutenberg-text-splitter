@@ -7,11 +7,11 @@ This program aims to allow you to download an HTML version of a book on [Project
 ### Assumptions
 Right now, the code works well with well-formed HTML.  So, it is assumed you are using a document that is well-formed.
 
-If you are processing a file where chapter content is enclosed inside `<div>`, then the program will see the `<div>` and grab all children until the next one (or the end of the file).
+If you are processing a file where chapter content is enclosed inside `<div>`, then the program will see the `<div>` and grab all children until the next one (or the end of the file) and save these into a chapter.
 
-If you are processing a file where chapter content is only demarcated by `<h2>` or `<h2>` or something like this, then then program will grab all siblings of these elements until the next one (or the end of the file).
+If you are processing a file where chapter content is only demarcated by `<h2>` or `<h2>` or something like this, then then program will grab all siblings of these elements until the next one (or the end of the file) and save these into a chapter.
 
-This is not a perfect system, and improvements are being devised.
+This is not a perfect system, and improvements are being devised.  One obvious complication is the presence of siblings with the same name... name + attribute detection is planned to fix this.
 
 ### An Example of _Bad_ HTML:
 
