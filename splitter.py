@@ -1,3 +1,4 @@
+from curses.ascii import isalpha
 import os
 
 from bs4 import BeautifulSoup
@@ -58,9 +59,6 @@ class Editor:
                     input_files[i] = f
                     i += 1
 
-            input_files["C"] = "Clear selection"
-            input_files["M"] = "Return to Main Menu"
-
             table = Table(title="Source Files", show_lines=True)
             table.add_column("Option", style="cyan", no_wrap=True)
             table.add_column("File", justify="left", style="magenta")
@@ -72,59 +70,55 @@ class Editor:
             console.print(table)
             
             print("\n")
-            
 
             def get_file_choice(files):
                 #These are the menu choices and the corresponding functions:
-                file_selection = ""
+                file_selection = the_program.chosen_file
+                choice = input("Enter the number of the file you'd like to use, or 'M' for the Main Menu: ")
+                valid_keys = set(input_files.keys())
 
-                choice = input("Enter the number of the file you'd like to use: ")
-                if choice.lower() == "c":
-                    file_selection = ""
-                elif choice.lower() == "m":
-                    #Don't erase a choice if it exists, but pass an empty value if it doesn't
-                    print("hey")
-                elif choice in str(files.keys()):
-                    choice = int(choice)
-                    if files.get(choice) is not None:
-                        file_selection = files[choice]
-                        #Clear file-specifc values when choosing a new file
-                        the_program.selected_attrib_for_chapters = ""
-                        the_program.selected_element_for_chapters = ""
-                        the_program.offset = 0
-        #                menu()
-                else:
+                if choice.lower() == "m":
+                    #Don't erase a choice if it exists
+                    return
+
+                if choice.lower() not in str(valid_keys):
                     print("Sorry, that's not a valid choice. Try again.\n")
-                    get_file_choice()
+                    get_file_choice(files)
+                else:
+                    choice = int(choice)
+                    file_selection = files.get(choice)
+                    the_program.chosen_file = file_selection
+                    #Clear file-specifc values when choosing a new file
+                    the_program.selected_attrib_for_chapters = ""
+                    the_program.selected_element_for_chapters = ""
+                    the_program.offset = 0
                 
-                return file_selection
-
-            file_selection = get_file_choice(input_files)
-            return file_selection
+            get_file_choice(input_files)
 
         def get_menu_choice():
             #These are the menu choices and the corresponding functions:
             choice = input("Select an option from the menu above: ")
             if choice == '1':
-                the_program.chosen_file = generate_input_list()
-                return
+                generate_input_list()
             elif choice == '2':
                 get_element_count_in_chosen_file()
             elif choice == '3':
                 see_samples_chooser(the_program.selected_element_for_chapters)
             elif choice == '4':
                 process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.offset)
-            elif choice.lower() == 'a':
+            elif choice.lower() == 'a!':
                 the_program.selected_attrib_for_chapters = ""
-                menu()
-            elif choice.lower() == 'e':
+            elif choice.lower() == 'c!':
+                the_program.chosen_file = ""
+                the_program.selected_attrib_for_chapters = ""
                 the_program.selected_element_for_chapters = ""
-                menu()
+                the_program.offset = 0
+            elif choice.lower() == 'e!':
+                the_program.selected_element_for_chapters = ""
             elif choice.lower() == 'h':
                 help_screen()
-            elif choice.lower() == 'o':
+            elif choice.lower() == 'o!':
                 the_program.offset = 0
-                menu()
             elif choice.lower() == 'q':
                 print("\nOk, quitting...\n")
                 quit()
@@ -134,16 +128,16 @@ class Editor:
 
         def get_offset_choice(element):
             #Count the number of 'element' that happen before the chapters begin, and subtract from 1 to get the right starting place for this counter.
-            choice = input(f"Define offset (how many of these {element} to ignore): ")
-            if choice is not None:
+            choice = input(f"\nDefine offset (how many of these {element} to ignore) (or enter keeps current value: {the_program.offset}): ")
+            if choice == "":
+                return
+            else:
                 try:
                     int(choice)
                     the_program.offset = int(choice)
                 except ValueError:
                     choice = ""
-
-                menu()
-
+            
         def get_element_count_in_chosen_file():
             screen_clear()
             #Placeholder dict for element counts
@@ -227,7 +221,7 @@ class Editor:
                 console.print(table)
             else:
                 console = Console()
-                text = Text("\n\tNo classes or IDs for this element.\n")
+                text = Text("\n\t__== No classes or IDs for this element. ==__\n")
                 text.stylize("cyan")
                 console.print(text)
 
@@ -241,17 +235,15 @@ class Editor:
             if choice in (class_counts.keys() or id_counts.keys()):
                 the_program.selected_attrib_for_chapters = choice
                 the_program.selected_element_for_chapters = selected_element
-                menu()
             elif choice == "1":
                 screen_clear()
                 get_element_count_in_chosen_file()
             elif choice == "2":
                 the_program.selected_element_for_chapters = selected_element
-                menu()
             elif choice.lower() == "m":
-                menu()
+                pass
             else:
-                choice = input("What's next? ")
+                dig_deeper(selected_element, soup)
 
         def see_samples_chooser(element):
             container_elems = ["div"]
@@ -296,7 +288,7 @@ class Editor:
                 for item in temp_samples[:5]:
                     print(f"Item number {j}: " + item + "\n")
                     j += 1
-
+            
             get_offset_choice(element)
 
         def see_samples_of_container_element(the_file, element, attribute):
@@ -435,9 +427,11 @@ class Editor:
             print("3.\tSee Samples of Element/Attribute")
             print("4.\tProcess the File")
             print("\n")
-            print("A.\tClear Current Attribute Choice")
-            print("E.\tClear Current Element Choice")
-            print("O.\tClear Current Offset")
+            print("A!\tClear Current Attribute Choice")
+            print("C!\tClear Everything")
+            print("E!\tClear Current Element Choice")
+            print("O!\tClear Current Offset")
+            print("\n")
             print("H.\tHelp!")
             print("Q.\tQuit")
             print("\n")
