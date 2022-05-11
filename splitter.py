@@ -1,4 +1,3 @@
-from curses.ascii import isalpha
 import os
 
 from bs4 import BeautifulSoup
