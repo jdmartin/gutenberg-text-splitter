@@ -141,6 +141,7 @@ class Editor:
             screen_clear()
             #Placeholder dict for element counts
             counts_dict = {}
+            suggested_items = []
             #Get File contents
             with open(the_program.chosen_file, "r", encoding="utf-8") as file:
                 contents = file.read()
@@ -156,24 +157,93 @@ class Editor:
 
             #Print dictionary in order by largest value
             sort_counts_dict = sorted(counts_dict.items(), key=lambda x: x[1], reverse=True)
-            table = Table(title=f"Elements in {the_program.chosen_file}")
+            table = Table(title=f"Elements in {the_program.chosen_file}", min_width=60)
             table.add_column("Count", style="cyan", no_wrap=True)
             table.add_column("element", justify="left", style="magenta")
             
             for item, value in sort_counts_dict:
                 table.add_row(str(value), item)
             
-            console = Console()
-            console.print(table)
+            #Generate some recommendations based on likely useful elements/attributes
+            suggest_table, suggested_items = offer_suggestions_about_elements_and_attributes(soup)
 
-            choice = input("\nGive me an element name to look deeper, or 'M' to return to menu: ")
+            #Generate list of valid choices
+            valid_suggestions = []
+            for item in suggested_items:
+                valid_suggestions += item[0]
+            
+            #Display the Data
+            console = Console()
+
+            # TODO: Maybe replace this with a fancy rich.layout?
+            console.print(table)
+            print("\n")
+            console.print(suggest_table)
+            print("\n")
+
+            choice = input("Give me an element name to look deeper, an option number to use a suggestion, or 'M' to return to menu: ")
             if choice.lower() == "m":
                 menu()
+            elif choice in valid_suggestions:                
+                for entry in suggested_items:
+                    if entry[0] == choice:
+                        the_program.selected_element_for_chapters = entry[2]
+                        the_program.selected_attrib_for_chapters = entry[3]
+                        menu()
             elif choice in counts_dict.keys():
                 dig_deeper(choice, soup)
             else:
                 screen_clear()
                 get_element_count_in_chosen_file()
+
+        def offer_suggestions_about_elements_and_attributes(soup):
+            suggested_items = []
+            chapter_search_terms = ["chap", "chapter", "x-ebookmarker-drop"]
+            chapter_search_results = []
+            header_search_terms = ["h2", "h3", "hr"]
+            header_search_results = []
+            class_count = 0
+            element_name = ""
+
+            option = 1
+            #We're going to go through our list of suggested elements and attributes, count them, assign an option, and add them to the list we'll use to display and handle suggestions
+            for item in chapter_search_terms:
+                for thing in soup.find_all(attrs={"class": f"{item}"}):
+                    element_name = thing.name
+                    class_count += 1
+                chapter_search_results.append([element_name, f"{item}", class_count, str(option)])
+                class_count = 0
+                element_name = ""
+                option += 1
+            
+            for item in header_search_terms:
+                for thing in soup.find_all(f"{item}"):
+                    element_name = thing.name
+                    class_count += 1
+                header_search_results.append([element_name, f"{item}", class_count, str(option)])
+                class_count = 0
+                element_name = ""
+                option += 1
+
+            suggest_table = Table(title=f"Suggested Elements and Attributes in {the_program.chosen_file}", min_width=60)
+            suggest_table.add_column("Option #", justify="left" ,style="purple")
+            suggest_table.add_column("Count", style="cyan", no_wrap=True)
+            suggest_table.add_column("element", justify="left", style="magenta")
+            suggest_table.add_column("attribute", justify="left", style="green")
+            
+            #Only add things to the table if their count is not 0.
+            for item in chapter_search_results:
+                if item[2] != 0:
+                    suggest_table.add_row(item[3], str(item[2]), item[0], item[1])
+                    suggested_items.append([item[3], str(item[2]), item[0], item[1]])
+                    
+            for item in header_search_results:
+                if item[2] != 0:
+                    suggest_table.add_row(item[3], str(item[2]), item[0], "")
+                    suggested_items.append([item[3], str(item[2]), item[0], ""])
+
+            return suggest_table, suggested_items
+
 
         def dig_deeper(selected_element, soup):
             class_counts = {}
