@@ -6,7 +6,7 @@ from rich.table import Table
 from rich.text import Text
 
 class Editor:
-    def __init__(self, chosen_file="", selected_element_for_chapters="", selected_attrib_for_chapters="", offset=0, completed_files=[]):
+    def __init__(self):
         self.chosen_file = ""
         self.selected_element_for_chapters = ""
         self.selected_attrib_for_chapters = ""
