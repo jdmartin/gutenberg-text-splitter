@@ -465,6 +465,10 @@ class Editor:
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
                         if "END OF THE PROJECT GUTENBERG EBOOK" in sibling.text:
+                            if i > 0:
+                                with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    output_file.write(chapter_content)
+                            i += 1
                             return
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
