@@ -365,19 +365,7 @@ class Editor:
                                 temp_samples.append(child.get_text())
                                 break
             
-            if len(temp_samples) > 20:
-                j = 1
-                for item in temp_samples[:20]:
-                    print(f"Item number {j}: " + item[0:100] + "...\n")
-                    j += 1
-            elif len(temp_samples) >= 10:
-                for item in temp_samples[:10]:
-                    print(f"Item number {j}: " + item + "\n")
-                    j += 1
-            else:
-                for item in temp_samples[:5]:
-                    print(f"Item number {j}: " + item + "\n")
-                    j += 1
+            show_the_samples(temp_samples)
             
             get_offset_choice(element)
 
@@ -399,24 +387,35 @@ class Editor:
                     if entry in sample.attrs:
                         continue
                 temp_samples.append(sample.get_text())
+            
+            show_the_samples(temp_samples)
 
-            if len(temp_samples) > 20:
+            get_offset_choice(element)
+
+        def show_the_samples(temp_samples):
+            screen_clear()
+            table = Table(title="Offsets and Samples", width=120, show_lines=True)
+            table.add_column("Offset", style="cyan", no_wrap=True)
+            table.add_column("Sample Text", justify="left", style="magenta")
+
+            if len(temp_samples) > 15:
                 j = 1
-                for item in temp_samples[:20]:
-                    print(f"Item number {j}: " + item[0:100] + "...\n")
+                for item in temp_samples[:15]:
+                    table.add_row(str(j), item[0:120].strip())
                     j += 1
             elif len(temp_samples) >= 10:
                 j = 1
                 for item in temp_samples[:10]:
-                    print(f"Item number {j}: " + item[0:100] + "...\n")
+                    table.add_row(str(j), item[0:120].strip())
                     j += 1
             else:
                 for item in temp_samples[:5]:
                     j = 1
-                    print(f"Item number {j}: " + item[0:100] + "...\n")
+                    table.add_row(str(j), item[0:120].strip())
                     j += 1
-
-            get_offset_choice(element)
+            
+            console = Console()
+            console.print(table)
 
         def generate_menu_meta_table():
             the_file = the_program.chosen_file
