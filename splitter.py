@@ -166,7 +166,6 @@ class Editor:
             
             #Generate some recommendations based on likely useful elements/attributes
             suggest_table, suggested_items = offer_suggestions_about_elements_and_attributes(soup)
-
             #Generate list of valid choices
             valid_suggestions = []
             for item in suggested_items:
@@ -225,7 +224,7 @@ class Editor:
                 element_name = ""
                 option += 1
 
-            suggest_table = Table(title=f"Suggested Elements and Attributes in {the_program.chosen_file}", min_width=60)
+            suggest_table = Table(title=f"Suggested Elements and Attributes in {the_program.chosen_file}", min_width=60, show_lines=True)
             suggest_table.add_column("Option #", justify="left" ,style="purple")
             suggest_table.add_column("Count", style="cyan", no_wrap=True)
             suggest_table.add_column("element", justify="left", style="magenta")
@@ -236,14 +235,13 @@ class Editor:
                 if item[2] != 0:
                     suggest_table.add_row(item[3], str(item[2]), item[0], item[1])
                     suggested_items.append([item[3], str(item[2]), item[0], item[1]])
-                    
+
             for item in header_search_results:
                 if item[2] != 0:
-                    suggest_table.add_row(item[3], str(item[2]), item[0], "")
-                    suggested_items.append([item[3], str(item[2]), item[0], ""])
+                    suggest_table.add_row(item[3], str(item[2]), item[0], item[1])
+                    suggested_items.append([item[3], str(item[2]), item[0], item[1]])
 
             return suggest_table, suggested_items
-
 
         def dig_deeper(selected_element, soup):
             class_counts = {}
