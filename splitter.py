@@ -487,13 +487,14 @@ class Editor:
 
                 for elem in list(elements):
                     chapter_content += elem.get_text()
-                    for child in elem.children:
-                        if "PROJECT GUTENBERG EBOOK" in child.text:
+                    #TODO Make sure this set of conditions triggers as expected.
+                    if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
                             if i > 0:
-                                    with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                        output_file.write(chapter_content)
-                            return
-
+                                with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    output_file.write(chapter_content)
+                            break
+                    
+                    for child in elem.children:
                         if the_program.excluded_attribs_for_chapters is not None:
                             if child.next_element.name == element:
                                 for entry in the_program.excluded_attribs_for_chapters:
@@ -504,7 +505,7 @@ class Editor:
                                     with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 
-                        if attrib != "":
+                        elif attrib != "":
                             if child.next_element.name == element:
                                 if not child.next_element.has_attr(attrib):
                                     chapter_content += child.get_text()
