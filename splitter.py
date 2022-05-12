@@ -238,8 +238,8 @@ class Editor:
 
             for item in header_search_results:
                 if item[2] != 0:
-                    suggest_table.add_row(item[3], str(item[2]), item[0], item[1])
-                    suggested_items.append([item[3], str(item[2]), item[0], item[1]])
+                    suggest_table.add_row(item[3], str(item[2]), item[0], "")
+                    suggested_items.append([item[3], str(item[2]), item[0], ""])
 
             return suggest_table, suggested_items
 
