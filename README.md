@@ -12,20 +12,21 @@ If you are processing a file where chapter content is enclosed inside `<div>`, t
 If you are processing a file where chapter content is only demarcated by `<h2>` or `<hr>` or something like this, then then program will grab all siblings of these elements until the next one (or the end of the file) and save these into a chapter.
 
 This is not a perfect system, and improvements are being devised.  One obvious complication is the presence of siblings with the same name... name + attribute detection is planned to fix this.
+  - (2022-05-12: Some improvements implemented. Negative matching is an option for texts where this fails.)
 
 ### An Example of _Bad_ HTML:
 
 Take [this book](https://www.gutenberg.org/files/68033/68033-h/68033-h.htm) (please). This book uses `<div class="chapter">`, but then only encloses titles in these sections. Books like this require a bit more planning in order to get both title and chapter content.
 
 ### Caveat
-This program isn't _automatic_ as such, as you are still needed to choose an element/attribute to demarcate chapters. But it is hoped that this will one day be improved.  As is, this will still save you flipping through your HTML looking for meaningful elements, and writing a custom script for each text... at least, I hope so. :)
+This program isn't _automatic_ as such, as you are still needed to choose an element/attribute to demarcate chapters. (Sugggestions are offered to save time.) But it is hoped that this will one day be improved.  As is, this will still save you flipping through your HTML looking for meaningful elements, and writing a custom script for each text... at least, I hope so. :)
 
 ### Ok, Ok, but how do I use it?!
 
 The Setup:
 
 0. Install the program:
-    - Create a new virtual environment to hold this.
+    - (Recommended) Create a new virtual environment to hold this.
     - Clone the repo to your new environment.
     - Install dependencies with `pip install -r requirements.txt`, `poetry install`, or similar.
 1. Drop any HTML formatted book into the input folder, or use one of the built-ins.
@@ -36,6 +37,7 @@ Now that the program is running...using the program is a four-part process.
 1. Choose a file to work with.
 2. Analyze the file to see what element/attribute you want to select for chapter detection.
     - N.B. Selecting an element will show you any classes or IDs on elements of that type to help narrow down your choice.
+        - This also gives access to the negative matching option
 3. Once you have decided on your element/attribute pair, you can see samples of those selections to help you choose an offset.
     - N.B. On irregularly constructed documents, there are often "chapters" that are really just prefaratory matter.  The offset allows you to say how many there and then chapter selections won't start until you've passed an offset number of those elements.
 4. Now, you can process the file.
