@@ -464,7 +464,7 @@ class Editor:
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
-                        if "END OF THE PROJECT GUTENBERG EBOOK" in sibling.text:
+                        if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i > 0:
                                 with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
@@ -488,7 +488,10 @@ class Editor:
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for child in elem.children:
-                        if "END OF THE PROJECT GUTENBERG EBOOK" in child.text:
+                        if "PROJECT GUTENBERG EBOOK" in child.text:
+                            if i > 0:
+                                    with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        output_file.write(chapter_content)
                             return
 
                         if the_program.excluded_attribs_for_chapters is not None:
