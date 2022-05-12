@@ -10,6 +10,7 @@ class Editor:
         self.chosen_file = ""
         self.selected_element_for_chapters = ""
         self.selected_attrib_for_chapters = ""
+        self.excluded_attribs_for_chapters = []
         self.offset = 0
         self.completed_files = []
 
@@ -51,7 +52,7 @@ class Editor:
             #Generate List of Texts in input directory for Menu
             directory = 'input'
 
-            for file in os.listdir(directory):
+            for file in sorted(os.listdir(directory)):
                 f = os.path.join(directory, file)
                 #Make sure it's a file
                 if os.path.isfile(f):
@@ -259,7 +260,7 @@ class Editor:
                         class_counts[temp] += 1
             for element in soup.find_all(selected_element):
                 if element.has_attr("id"):
-                    temp = element['id'][0]
+                    temp = element['id']
                     if temp not in id_counts.keys():
                         id_counts[temp] = 1
                     else:
@@ -298,11 +299,13 @@ class Editor:
             print("\n")
             print("\033[0;32m1\033[0m\tExamine another element")
             print("\033[0;32m2\033[0m\tUse this element to find chapters")
+            print("\033[0;32m3\033[0m\tNegative search (experimental, div attributes only for now)")
             print("\033[0;32mM\033[0m\tBack to main menu")
             print("\n")
+
             choice = input("Select an attribute to use for chapter selection, or another menu choice: ")
 
-            if choice in (class_counts.keys() or id_counts.keys()):
+            if choice in class_counts.keys() or choice in id_counts.keys():
                 the_program.selected_attrib_for_chapters = choice
                 the_program.selected_element_for_chapters = selected_element
             elif choice == "1":
@@ -310,6 +313,12 @@ class Editor:
                 get_element_count_in_chosen_file()
             elif choice == "2":
                 the_program.selected_element_for_chapters = selected_element
+            elif choice == "3":
+                the_program.selected_element_for_chapters = selected_element
+                negative_choices = input("Enter a comma-separated list of attributes to exclude: ")
+                if negative_choices != "":
+                    for neg_choice in negative_choices.split(","):
+                        the_program.excluded_attribs_for_chapters.append(neg_choice.strip())
             elif choice.lower() == "m":
                 pass
             else:
@@ -337,6 +346,11 @@ class Editor:
 
             #Check that sample has text, if it doesn't then look to the next element (and its children) to see if we can find something.
             for sample in samples:
+                #Skip over excluded classes/IDs
+                for entry in the_program.excluded_attribs_for_chapters:
+                    if entry in sample.attrs:
+                        continue
+
                 if sample.get_text():
                     temp_samples.append(sample.get_text())
                 else:
@@ -350,7 +364,13 @@ class Editor:
                             if len(child.get_text()) > 1:
                                 temp_samples.append(child.get_text())
                                 break
-            if len(temp_samples) > 10:
+            
+            if len(temp_samples) > 20:
+                j = 1
+                for item in temp_samples[:20]:
+                    print(f"Item number {j}: " + item[0:100] + "...\n")
+                    j += 1
+            elif len(temp_samples) >= 10:
                 for item in temp_samples[:10]:
                     print(f"Item number {j}: " + item + "\n")
                     j += 1
@@ -371,11 +391,21 @@ class Editor:
             soup = BeautifulSoup(contents, "html.parser")
 
             samples = soup.find_all(element, attribute)
+
             temp_samples = []
             for sample in samples:
+                #Skip over excluded classes/IDs
+                for entry in the_program.excluded_attribs_for_chapters:
+                    if entry in sample.attrs:
+                        continue
                 temp_samples.append(sample.get_text())
 
-            if len(temp_samples) > 10:
+            if len(temp_samples) > 20:
+                j = 1
+                for item in temp_samples[:20]:
+                    print(f"Item number {j}: " + item[0:100] + "...\n")
+                    j += 1
+            elif len(temp_samples) >= 10:
                 j = 1
                 for item in temp_samples[:10]:
                     print(f"Item number {j}: " + item[0:100] + "...\n")
@@ -434,7 +464,10 @@ class Editor:
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
-                        if sibling.next_element.name == f'{element}' or sibling.name == 'pre' or sibling.next_sibling == None:
+                        if "END OF THE PROJECT GUTENBERG EBOOK" in sibling.text:
+                            return
+
+                        if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i > 0:
                                 with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
@@ -451,6 +484,19 @@ class Editor:
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for child in elem.children:
+                        if "END OF THE PROJECT GUTENBERG EBOOK" in child.text:
+                            return
+
+                        if the_program.excluded_attribs_for_chapters is not None:
+                            if child.next_element.name == element:
+                                for entry in the_program.excluded_attribs_for_chapters:
+                                    if not child.next_element.has_attr(entry):
+                                        chapter_content += child.get_text()
+                            else:
+                                if i > 0:
+                                    with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        output_file.write(chapter_content)
+                                
                         if attrib != "":
                             if child.next_element.name == element:
                                 if not child.next_element.has_attr(attrib):
@@ -485,6 +531,7 @@ class Editor:
                     process_non_container_element(off, output_dir, elements, element, attrib)
                 
                 the_program.completed_files.append(the_file)
+
 
         def menu():
             screen_clear()
