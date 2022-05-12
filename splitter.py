@@ -100,11 +100,14 @@ class Editor:
             if choice == '1':
                 generate_input_list()
             elif choice == '2':
-                get_element_count_in_chosen_file()
+                if the_program.chosen_file != "":
+                    get_element_count_in_chosen_file()
             elif choice == '3':
-                see_samples_chooser(the_program.selected_element_for_chapters)
+                if the_program.chosen_file != "":
+                    see_samples_chooser(the_program.selected_element_for_chapters)
             elif choice == '4':
-                process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.offset)
+                if the_program.chosen_file != "":
+                    process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.offset)
             elif choice.lower() == 'a!':
                 the_program.selected_attrib_for_chapters = ""
             elif choice.lower() == 'c!':
