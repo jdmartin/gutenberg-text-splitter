@@ -51,7 +51,7 @@ class Editor:
             #Generate List of Texts in input directory for Menu
             directory = 'input'
 
-            for file in os.listdir(directory):
+            for file in sorted(os.listdir(directory)):
                 f = os.path.join(directory, file)
                 #Make sure it's a file
                 if os.path.isfile(f):
@@ -259,7 +259,7 @@ class Editor:
                         class_counts[temp] += 1
             for element in soup.find_all(selected_element):
                 if element.has_attr("id"):
-                    temp = element['id'][0]
+                    temp = element['id']
                     if temp not in id_counts.keys():
                         id_counts[temp] = 1
                     else:
@@ -300,9 +300,10 @@ class Editor:
             print("\033[0;32m2\033[0m\tUse this element to find chapters")
             print("\033[0;32mM\033[0m\tBack to main menu")
             print("\n")
+
             choice = input("Select an attribute to use for chapter selection, or another menu choice: ")
 
-            if choice in (class_counts.keys() or id_counts.keys()):
+            if choice in class_counts.keys() or choice in id_counts.keys():
                 the_program.selected_attrib_for_chapters = choice
                 the_program.selected_element_for_chapters = selected_element
             elif choice == "1":
