@@ -395,7 +395,7 @@ class Editor:
             the_offset = str(the_program.offset)
             status = ""
 
-            table = Table(title="Status")
+            table = Table(title="Status", style="purple", title_style="green")
 
             table.add_column("Current File", justify="center", style="cyan", no_wrap=True)
             table.add_column("Current Element", justify="center", style="magenta")
