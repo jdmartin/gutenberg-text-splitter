@@ -34,7 +34,7 @@ class Editor:
                                         Why? Because sometimes encoders use the same elements for unrelated, extra-textual matters.                    
                     
             """)
-            choice = input("\nPress enter to return to the main menu")
+            choice = input("\nPress \033[0;32menter\033[0m to return to the main menu")
             if choice is not None:
                 menu()
 
@@ -73,7 +73,7 @@ class Editor:
             def get_file_choice(files):
                 #These are the menu choices and the corresponding functions:
                 file_selection = the_program.chosen_file
-                choice = input("Enter the number of the file you'd like to use, or 'M' for the Main Menu: ")
+                choice = input("Enter the number of the file you'd like to use, or '\033[0;32mM\033[0m' for the Main Menu: ")
                 valid_keys = set(input_files.keys())
 
                 if choice.lower() == "m":
@@ -180,7 +180,7 @@ class Editor:
             console.print(suggest_table)
             print("\n")
 
-            choice = input("Give me an element name to look deeper, an option number to use a suggestion, or 'M' to return to menu: ")
+            choice = input("Give me an element name to look deeper, an option number to use a suggestion, or '\033[0;32mM\033[0m' to return to menu: ")
             if choice.lower() == "m":
                 menu()
             elif choice in valid_suggestions:                
@@ -293,9 +293,9 @@ class Editor:
                 console.print(text)
 
             print("\n")
-            print("1.\tExamine another element")
-            print("2.\tUse this element to find chapters")
-            print("M.\tBack to main menu")
+            print("\033[0;32m1\033[0m\tExamine another element")
+            print("\033[0;32m2\033[0m\tUse this element to find chapters")
+            print("\033[0;32mM\033[0m\tBack to main menu")
             print("\n")
             choice = input("Select an attribute to use for chapter selection, or another menu choice: ")
 
@@ -489,18 +489,18 @@ class Editor:
             generate_menu_meta_table()
             print("\n")
             print("What would you like to do?:\n")
-            print("1.\tSelect a Working File")
-            print("2.\tAnalyze Working File")
-            print("3.\tSee Samples of Element/Attribute")
-            print("4.\tProcess the File")
+            print("\033[0;32m1\033[0m\tSelect a Working File")
+            print("\033[0;32m2\033[0m\tAnalyze Working File")
+            print("\033[0;32m3\033[0m\tSee Samples of Element/Attribute")
+            print("\033[0;32m4\033[0m\tProcess the File")
             print("\n")
-            print("A!\tClear Current Attribute Choice")
-            print("C!\tClear Everything")
-            print("E!\tClear Current Element Choice")
-            print("O!\tClear Current Offset")
+            print("\033[0;32mA!\033[0m\tClear Current Attribute Choice")
+            print("\033[0;32mC!\033[0m\tClear Everything")
+            print("\033[0;32mE!\033[0m\tClear Current Element Choice")
+            print("\033[0;32mO!\033[0m\tClear Current Offset")
             print("\n")
-            print("H.\tHelp!")
-            print("Q.\tQuit")
+            print("\033[0;32mH\033[0m\tHelp!")
+            print("\033[0;32mQ\033[0m\tQuit")
             print("\n")
             get_menu_choice()
 
