@@ -1,6 +1,7 @@
 import os
 
 from bs4 import BeautifulSoup
+from pydoc import pager
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -32,7 +33,9 @@ class Editor:
                                         (e.g. <div class="chapter"> and not <div id="the_nothing">.)
                     
                     Current Offset: From Menu Option 3, this is the number of your chosen element that should be skipped before writing chapters.
-                                        Why? Because sometimes encoders use the same elements for unrelated, extra-textual matters.                    
+                                        Why? Because sometimes encoders use the same elements for unrelated, extra-textual matters. 
+
+                    N.B. (Exploring the source pipes the file to less. Use /pattern to highlight pattern ahead, or ?pattern for behind.)                   
                     
             """)
             choice = input("\nPress \033[0;32menter\033[0m to return to the main menu")
@@ -109,6 +112,11 @@ class Editor:
             elif choice == '4':
                 if the_program.chosen_file != "":
                     process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.offset)
+            elif choice.lower() == 's':
+                if the_program.chosen_file != "":
+                    with open(the_program.chosen_file, 'r') as source_file:
+                        source_contents = source_file.read()
+                        pager(source_contents)
             elif choice.lower() == 'a!':
                 the_program.selected_attrib_for_chapters = ""
             elif choice.lower() == 'c!':
@@ -539,7 +547,6 @@ class Editor:
                 
                 the_program.completed_files.append(the_file)
 
-
         def menu():
             screen_clear()
             print("\n")
@@ -550,6 +557,8 @@ class Editor:
             print("\033[0;32m2\033[0m\tAnalyze Working File")
             print("\033[0;32m3\033[0m\tSee Samples of Element/Attribute")
             print("\033[0;32m4\033[0m\tProcess the File")
+            print("\n")
+            print("\033[0;32mS\033[0m\tExamine the source file")
             print("\n")
             print("\033[0;32mA!\033[0m\tClear Current Attribute Choice")
             print("\033[0;32mC!\033[0m\tClear Everything")
