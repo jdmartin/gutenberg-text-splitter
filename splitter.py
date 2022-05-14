@@ -213,28 +213,30 @@ class Editor:
             chapter_search_results = []
             header_search_terms = ["h2", "h3", "hr"]
             header_search_results = []
-            class_count = 0
-            element_name = ""
 
-            option = 1
+            option = 0
             #We're going to go through our list of suggested elements and attributes, count them, assign an option, and add them to the list we'll use to display and handle suggestions
             for item in chapter_search_terms:
+                class_count = 0
+                element_name = ""
                 for thing in soup.find_all(attrs={"class": f"{item}"}):
                     element_name = thing.name
                     class_count += 1
-                chapter_search_results.append([element_name, f"{item}", class_count, str(option)])
-                class_count = 0
-                element_name = ""
-                option += 1
+                #Only store result and increment the option if there are results for item.
+                if class_count > 0:
+                    option += 1
+                    chapter_search_results.append([element_name, f"{item}", class_count, str(option)])
             
             for item in header_search_terms:
+                class_count = 0
+                element_name = ""
                 for thing in soup.find_all(f"{item}"):
                     element_name = thing.name
                     class_count += 1
-                header_search_results.append([element_name, f"{item}", class_count, str(option)])
-                class_count = 0
-                element_name = ""
-                option += 1
+                #Only store result and increment the option if there are results for item.
+                if class_count > 0:
+                    option += 1
+                    header_search_results.append([element_name, f"{item}", class_count, str(option)])
 
             suggest_table = Table(title=f"Suggested Elements and Attributes in {the_program.chosen_file}", min_width=60, show_lines=True)
             suggest_table.add_column("Option #", justify="left" ,style="purple")
