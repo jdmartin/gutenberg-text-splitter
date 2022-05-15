@@ -1,5 +1,4 @@
 import os
-from tracemalloc import stop
 
 from bs4 import BeautifulSoup
 from pydoc import pager
