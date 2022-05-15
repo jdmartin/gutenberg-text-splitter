@@ -17,6 +17,7 @@ class Editor:
         self.selected_attrib_for_chapters = ""
         self.excluded_attribs_for_chapters = []
         self.offset = 0
+        self.publication_year = ""
         self.completed_files = []
         return
 
@@ -112,6 +113,9 @@ class Editor:
                     see_samples_chooser(the_program.selected_element_for_chapters)
             elif choice == '4':
                 if the_program.chosen_file != "":
+                    get_publication_year()
+            elif choice == '5':
+                if the_program.chosen_file != "":
                     process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.offset)
             elif choice.lower() == 's':
                 if the_program.chosen_file != "":
@@ -133,6 +137,8 @@ class Editor:
                 help_screen()
             elif choice.lower() == 'o!':
                 the_program.offset = 0
+            elif choice.lower() == 's!':
+                the_program.publication_year = ""
             elif choice.lower() == 'q':
                 print("\nOk, quitting...\n")
                 quit()
@@ -427,6 +433,7 @@ class Editor:
 
         def generate_menu_meta_table():
             the_file = the_program.chosen_file
+            pub_year = the_program.publication_year
             the_element = the_program.selected_element_for_chapters
             the_attrib = the_program.selected_attrib_for_chapters
             the_offset = str(the_program.offset)
@@ -435,6 +442,7 @@ class Editor:
             table = Table(title="Status", style="purple", title_style="green")
 
             table.add_column("Current File", justify="center", style="cyan", no_wrap=True)
+            table.add_column("Pub Year", justify="center", style="blue")
             table.add_column("Current Element", justify="center", style="magenta")
             table.add_column("Current Attribute", justify="center", style="green")
             table.add_column("Current Offset", justify="center", style="yellow")
@@ -448,7 +456,7 @@ class Editor:
             if the_file == "":
                 status = ""
 
-            table.add_row(the_file, the_element, the_attrib, the_offset, status)
+            table.add_row(the_file, pub_year, the_element, the_attrib, the_offset, status)
 
             console.print(table)
 
@@ -457,8 +465,8 @@ class Editor:
             #Setup
             output_dir = the_file.split('/')[1]
             output_dir = output_dir.split('.')[0]
-            if not os.path.exists(f'output/{output_dir}'):
-                os.makedirs(f'output/{output_dir}')
+            if not os.path.exists(f'output/{the_program.publication_year}-{output_dir}'):
+                os.makedirs(f'output/{the_program.publication_year}-{output_dir}')
 
             container_elems = ["div"]
 
@@ -472,14 +480,14 @@ class Editor:
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i > 0:
-                                with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             i += 1
                             return
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i > 0:
-                                with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             i += 1
                             chapter_content = ""
@@ -496,7 +504,7 @@ class Editor:
                     #TODO Make sure this set of conditions triggers as expected.
                     if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
                             if i > 0:
-                                with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             break
                     
@@ -508,7 +516,7 @@ class Editor:
                                         chapter_content += child.get_text()
                             else:
                                 if i > 0:
-                                    with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 
                         elif attrib != "":
@@ -517,7 +525,7 @@ class Editor:
                                     chapter_content += child.get_text()
                             else:
                                 if i > 0:
-                                    with open(f"output/{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
 
                     i += 1
@@ -546,6 +554,17 @@ class Editor:
                 
                 the_program.completed_files.append(the_file)
 
+        def get_publication_year():
+            #These are the menu choices and the corresponding functions:
+            if the_program.publication_year == "":
+                choice = console.input(f"Enter the year of publication: ")
+            else:
+                choice = console.input(f"Enter the year of publication, or keep the current value of {the_program.publication_year}: ")
+            if choice == "":
+                pass
+            else:
+                the_program.publication_year = choice
+
         def menu():
             screen_clear()
             print("\n")
@@ -555,7 +574,8 @@ class Editor:
             print("[bold green]1[/bold green]\tSelect a Working File")
             print("[bold green]2[/bold green]\tAnalyze Working File")
             print("[bold green]3[/bold green]\tSee Samples of Element/Attribute")
-            print("[bold green]4[/bold green]\tProcess the File")
+            print("[bold green]4[/bold green]\tSet Publication Year")
+            print("[bold green]5[/bold green]\tProcess the File")
             print("\n")
             print("[bold green]S[/bold green]\tExamine the source file")
             print("\n")
@@ -563,6 +583,7 @@ class Editor:
             print("[bold green]C![/bold green]\tClear Everything")
             print("[bold green]E![/bold green]\tClear Current Element Choice")
             print("[bold green]O![/bold green]\tClear Current Offset")
+            print("[bold green]Y![/bold green]\tClear Publication Year")
             print("\n")
             print("[bold green]H[/bold green]\tHelp!")
             print("[bold green]Q[/bold green]\tQuit")
