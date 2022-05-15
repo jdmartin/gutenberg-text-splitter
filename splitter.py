@@ -465,13 +465,19 @@ class Editor:
             #Setup
             output_dir = the_file.split('/')[1]
             output_dir = output_dir.split('.')[0]
-            if not os.path.exists(f'output/{the_program.publication_year}-{output_dir}'):
-                os.makedirs(f'output/{the_program.publication_year}-{output_dir}')
+            output_dir_part = ""
+            if the_program.publication_year == "":
+                output_dir_part = f"{output_dir}"
+            else:
+                output_dir_part = f"{the_program.publication_year}-{output_dir}"
+
+            if not os.path.exists(f'output/{output_dir_part}'):
+                os.makedirs(f'output/{output_dir_part}')
 
             container_elems = ["div"]
 
             #Define the functions that will do the work:
-            def process_non_container_element(off, output_dir, elements, element, attrib):
+            def process_non_container_element(off, elements, element, attrib):
                 chapter_content = ""
                 i = (1 - off)
                 
@@ -480,14 +486,14 @@ class Editor:
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i > 0:
-                                with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             i += 1
                             return
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i > 0:
-                                with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             i += 1
                             chapter_content = ""
@@ -495,16 +501,17 @@ class Editor:
                         else:
                             chapter_content += sibling.get_text()
 
-            def process_container_element(off, output_dir, elements, element, attrib):
+            def process_container_element(off, elements, element, attrib):
                 chapter_content = ""
                 i = (1 - off)
+
 
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     #TODO Make sure this set of conditions triggers as expected.
                     if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
                             if i > 0:
-                                with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             break
                     
@@ -516,7 +523,7 @@ class Editor:
                                         chapter_content += child.get_text()
                             else:
                                 if i > 0:
-                                    with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 
                         elif attrib != "":
@@ -525,7 +532,7 @@ class Editor:
                                     chapter_content += child.get_text()
                             else:
                                 if i > 0:
-                                    with open(f"output/{the_program.publication_year}-{output_dir}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
 
                     i += 1
@@ -548,9 +555,9 @@ class Editor:
                 if element in container_elems:
                     #Since we have known chapter divisions, we can start numbering at 1.
                     #TODO: evaluate this more thoroughly
-                    process_container_element(off, output_dir, elements, element, attrib)
+                    process_container_element(off, elements, element, attrib)
                 else:
-                    process_non_container_element(off, output_dir, elements, element, attrib)
+                    process_non_container_element(off, elements, element, attrib)
                 
                 the_program.completed_files.append(the_file)
 
