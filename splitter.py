@@ -2,9 +2,13 @@ import os
 
 from bs4 import BeautifulSoup
 from pydoc import pager
+from rich import print
 from rich.console import Console
+from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+
+console = Console()
 
 class Editor:
     def __init__(self):
@@ -14,7 +18,6 @@ class Editor:
         self.excluded_attribs_for_chapters = []
         self.offset = 0
         self.completed_files = []
-
         return
 
     def main():
@@ -25,27 +28,26 @@ class Editor:
             
                 Some useful concepts:
 
-                    Current File: From Menu Option 1, this is the file you want to work on.
+                    [red]Current File[/red]: From Menu Option 1, this is the file you want to work on.
 
-                    Current Element: From Menu Option 2, this is the element that demarcates chapter boundaries.
+                    [red]Current Element[/red]: From Menu Option 2, this is the element that demarcates chapter boundaries.
 
-                    Current Attirbute: From Menu Option 2, this is the attribute that specifies which elements are to be used for chapter boundaries. 
+                    [red]Current Attirbute[/red]: From Menu Option 2, this is the attribute that specifies which elements are to be used for chapter boundaries. 
                                         (e.g. <div class="chapter"> and not <div id="the_nothing">.)
                     
-                    Current Offset: From Menu Option 3, this is the number of your chosen element that should be skipped before writing chapters.
+                    [red]Current Offset[/red]: From Menu Option 3, this is the number of your chosen element that should be skipped before writing chapters.
                                         Why? Because sometimes encoders use the same elements for unrelated, extra-textual matters. 
 
-                    N.B. (Exploring the source pipes the file to less. Use /pattern to highlight pattern ahead, or ?pattern for behind.)                   
+                    N.B. (Exploring the source pipes the file to less. Use /pattern to highlight pattern ahead, or [bold magenta]?pattern[/bold magenta] for behind.)                   
                     
             """)
-            choice = input("\nPress \033[0;32menter\033[0m to return to the main menu")
+            choice = console.input("\nPress [bold green]enter[/bold green] to return to the main menu")
             if choice is not None:
                 menu()
 
         # define our clear function
         def screen_clear():
-            #see: https://student.cs.uwaterloo.ca/~cs452/terminal.html
-            print("\033[H\033[J")
+            console.clear()
 
         # generate a list of files in input/
         def generate_input_list():
@@ -69,7 +71,6 @@ class Editor:
             for item,value in input_files.items():
                 table.add_row(str(item), value)
             
-            console = Console()
             console.print(table)
             
             print("\n")
@@ -77,7 +78,7 @@ class Editor:
             def get_file_choice(files):
                 #These are the menu choices and the corresponding functions:
                 file_selection = the_program.chosen_file
-                choice = input("Enter the number of the file you'd like to use, or '\033[0;32mM\033[0m' for the Main Menu: ")
+                choice = console.input("Enter the number of the file you'd like to use, or '[bold green]M[/bold green]' for the Main Menu: ")
                 valid_keys = set(input_files.keys())
 
                 if choice.lower() == "m":
@@ -100,7 +101,7 @@ class Editor:
 
         def get_menu_choice():
             #These are the menu choices and the corresponding functions:
-            choice = input("Select an option from the menu above: ")
+            choice = console.input("Select an option from the menu above: ")
             if choice == '1':
                 generate_input_list()
             elif choice == '2':
@@ -116,7 +117,9 @@ class Editor:
                 if the_program.chosen_file != "":
                     with open(the_program.chosen_file, 'r') as source_file:
                         source_contents = source_file.read()
-                        pager(source_contents)
+                        syntax = Syntax(source_contents, "html", line_numbers=True)
+                        with console.pager():
+                            console.print(syntax)
             elif choice.lower() == 'a!':
                 the_program.selected_attrib_for_chapters = ""
             elif choice.lower() == 'c!':
@@ -139,7 +142,7 @@ class Editor:
 
         def get_offset_choice(element):
             #Count the number of 'element' that happen before the chapters begin, and subtract from 1 to get the right starting place for this counter.
-            choice = input(f"\nDefine offset (how many of these {element} to ignore) (or enter keeps current value: {the_program.offset}): ")
+            choice = console.input(f"\nDefine offset (how many of these {element} to ignore) (or enter keeps current value: {the_program.offset}): ")
             if choice == "":
                 return
             else:
@@ -184,15 +187,13 @@ class Editor:
                 valid_suggestions += item[0]
             
             #Display the Data
-            console = Console()
-
             # TODO: Maybe replace this with a fancy rich.layout?
             console.print(table)
             print("\n")
             console.print(suggest_table)
             print("\n")
 
-            choice = input("Give me an element name to look deeper, an option number to use a suggestion, or '\033[0;32mM\033[0m' to return to menu: ")
+            choice = console.input("Give me an element name to look deeper, an option number to use a suggestion, or '[bold green]M[/bold green]' to return to menu: ")
             if choice.lower() == "m":
                 menu()
             elif choice in valid_suggestions:                
@@ -298,22 +299,20 @@ class Editor:
             
             #Only print table if it has contents
             if table.rows:
-                console = Console()
                 console.print(table)
             else:
-                console = Console()
                 text = Text("\n\t__== No classes or IDs for this element. ==__\n")
                 text.stylize("cyan")
                 console.print(text)
 
             print("\n")
-            print("\033[0;32m1\033[0m\tExamine another element")
-            print("\033[0;32m2\033[0m\tUse this element to find chapters")
-            print("\033[0;32m3\033[0m\tNegative search (experimental, div attributes only for now)")
-            print("\033[0;32mM\033[0m\tBack to main menu")
+            print("[bold green]1[/bold green]\tExamine another element")
+            print("[bold green]2[/bold green]\tUse this element to find chapters")
+            print("[bold green]3[/bold green]\tNegative search (experimental, div attributes only for now)")
+            print("[bold green]M[/bold green]\tBack to main menu")
             print("\n")
 
-            choice = input("Select an attribute to use for chapter selection, or another menu choice: ")
+            choice = console.input("Select an attribute to use for chapter selection, or another menu choice: ")
 
             if choice in class_counts.keys() or choice in id_counts.keys():
                 the_program.selected_attrib_for_chapters = choice
@@ -325,7 +324,7 @@ class Editor:
                 the_program.selected_element_for_chapters = selected_element
             elif choice == "3":
                 the_program.selected_element_for_chapters = selected_element
-                negative_choices = input("Enter a comma-separated list of attributes to exclude: ")
+                negative_choices = console.input("Enter a comma-separated list of attributes to exclude: ")
                 if negative_choices != "":
                     for neg_choice in negative_choices.split(","):
                         the_program.excluded_attribs_for_chapters.append(neg_choice.strip())
@@ -424,7 +423,6 @@ class Editor:
                     table.add_row(str(j), item[0:120].strip())
                     j += 1
             
-            console = Console()
             console.print(table)
 
         def generate_menu_meta_table():
@@ -443,16 +441,15 @@ class Editor:
             table.add_column("Complete?", justify="center")
 
             if the_file in the_program.completed_files:
-                status = "Complete!"
+                status = "[green]Complete![/green]"
             else:
-                status = "Incomplete!"
+                status = "[yellow]Incomplete![/yellow]"
             
             if the_file == "":
                 status = ""
 
             table.add_row(the_file, the_element, the_attrib, the_offset, status)
 
-            console = Console()
             console.print(table)
 
         #Process the XML and output HTML elements for the body.
@@ -555,20 +552,20 @@ class Editor:
             generate_menu_meta_table()
             print("\n")
             print("What would you like to do?:\n")
-            print("\033[0;32m1\033[0m\tSelect a Working File")
-            print("\033[0;32m2\033[0m\tAnalyze Working File")
-            print("\033[0;32m3\033[0m\tSee Samples of Element/Attribute")
-            print("\033[0;32m4\033[0m\tProcess the File")
+            print("[bold green]1[/bold green]\tSelect a Working File")
+            print("[bold green]2[/bold green]\tAnalyze Working File")
+            print("[bold green]3[/bold green]\tSee Samples of Element/Attribute")
+            print("[bold green]4[/bold green]\tProcess the File")
             print("\n")
-            print("\033[0;32mS\033[0m\tExamine the source file")
+            print("[bold green]S[/bold green]\tExamine the source file")
             print("\n")
-            print("\033[0;32mA!\033[0m\tClear Current Attribute Choice")
-            print("\033[0;32mC!\033[0m\tClear Everything")
-            print("\033[0;32mE!\033[0m\tClear Current Element Choice")
-            print("\033[0;32mO!\033[0m\tClear Current Offset")
+            print("[bold green]A![/bold green]\tClear Current Attribute Choice")
+            print("[bold green]C![/bold green]\tClear Everything")
+            print("[bold green]E![/bold green]\tClear Current Element Choice")
+            print("[bold green]O![/bold green]\tClear Current Offset")
             print("\n")
-            print("\033[0;32mH\033[0m\tHelp!")
-            print("\033[0;32mQ\033[0m\tQuit")
+            print("[bold green]H[/bold green]\tHelp!")
+            print("[bold green]Q[/bold green]\tQuit")
             print("\n")
             get_menu_choice()
 
