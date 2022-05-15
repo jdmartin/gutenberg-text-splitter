@@ -1,7 +1,6 @@
 import os
 
 from bs4 import BeautifulSoup
-from pydoc import pager
 from rich import print
 from rich.console import Console
 from rich.syntax import Syntax
