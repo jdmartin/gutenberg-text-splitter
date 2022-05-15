@@ -1,4 +1,5 @@
 import os
+from tracemalloc import stop
 
 from bs4 import BeautifulSoup
 from pydoc import pager
@@ -16,7 +17,7 @@ class Editor:
         self.selected_element_for_chapters = ""
         self.selected_attrib_for_chapters = ""
         self.excluded_attribs_for_chapters = []
-        self.offset = 0
+        self.starting_pos = 1
         self.publication_year = ""
         self.completed_files = []
         return
@@ -96,7 +97,8 @@ class Editor:
                     #Clear file-specifc values when choosing a new file
                     the_program.selected_attrib_for_chapters = ""
                     the_program.selected_element_for_chapters = ""
-                    the_program.offset = 0
+                    the_program.starting_pos = 1
+                    the_program.publication_year = ""
                 
             get_file_choice(input_files)
 
@@ -116,7 +118,7 @@ class Editor:
                     get_publication_year()
             elif choice == '5':
                 if the_program.chosen_file != "":
-                    process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.offset)
+                    process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos)
             elif choice.lower() == 's':
                 if the_program.chosen_file != "":
                     with open(the_program.chosen_file, 'r') as source_file:
@@ -130,13 +132,13 @@ class Editor:
                 the_program.chosen_file = ""
                 the_program.selected_attrib_for_chapters = ""
                 the_program.selected_element_for_chapters = ""
-                the_program.offset = 0
+                the_program.starting_pos = 1
             elif choice.lower() == 'e!':
                 the_program.selected_element_for_chapters = ""
             elif choice.lower() == 'h':
                 help_screen()
             elif choice.lower() == 'o!':
-                the_program.offset = 0
+                the_program.starting_pos = 1
             elif choice.lower() == 'y!':
                 the_program.publication_year = ""
             elif choice.lower() == 'q':
@@ -146,17 +148,28 @@ class Editor:
                 print("Sorry, that's not a valid choice. Try again.\n")
                 get_menu_choice()
 
-        def get_offset_choice(element):
+        def get_starting_pos():
             #Count the number of 'element' that happen before the chapters begin, and subtract from 1 to get the right starting place for this counter.
-            choice = console.input(f"\nDefine offset (how many of these {element} to ignore) (or enter keeps current value: {the_program.offset}): ")
+            choice = console.input(f"\nSelect starting position for chapter output (or enter keeps current value: {the_program.starting_pos}): ")
             if choice == "":
                 return
             else:
                 try:
                     int(choice)
-                    the_program.offset = int(choice)
+                    the_program.starting_pos = int(choice)
                 except ValueError:
                     choice = ""
+
+        def get_publication_year():
+            #These are the menu choices and the corresponding functions:
+            if the_program.publication_year == "":
+                choice = console.input(f"Enter the year of publication: ")
+            else:
+                choice = console.input(f"Enter the year of publication, or keep the current value of {the_program.publication_year}: ")
+            if choice == "":
+                pass
+            else:
+                the_program.publication_year = choice
             
         def get_element_count_in_chosen_file():
             screen_clear()
@@ -382,7 +395,7 @@ class Editor:
             
             show_the_samples(temp_samples)
             
-            get_offset_choice(element)
+            get_starting_pos()
 
         def see_samples_of_container_element(the_file, element, attribute):
             #Counter for display
@@ -405,27 +418,25 @@ class Editor:
             
             show_the_samples(temp_samples)
 
-            get_offset_choice(element)
+            get_starting_pos()
 
         def show_the_samples(temp_samples):
             screen_clear()
-            table = Table(title="Offsets and Samples", width=120, show_lines=True)
-            table.add_column("Offset", style="cyan", no_wrap=True)
+            j = 1
+            table = Table(title="Starting Position and Samples", width=120, show_lines=True)
+            table.add_column("Starting Pos.", style="cyan", no_wrap=True)
             table.add_column("Sample Text", justify="left", style="magenta")
 
             if len(temp_samples) > 15:
-                j = 1
                 for item in temp_samples[:15]:
                     table.add_row(str(j), item[0:120].strip())
                     j += 1
             elif len(temp_samples) >= 10:
-                j = 1
                 for item in temp_samples[:10]:
                     table.add_row(str(j), item[0:120].strip())
                     j += 1
             else:
                 for item in temp_samples[:5]:
-                    j = 1
                     table.add_row(str(j), item[0:120].strip())
                     j += 1
             
@@ -436,7 +447,7 @@ class Editor:
             pub_year = the_program.publication_year
             the_element = the_program.selected_element_for_chapters
             the_attrib = the_program.selected_attrib_for_chapters
-            the_offset = str(the_program.offset)
+            starting_pos = str(the_program.starting_pos)
             status = ""
 
             table = Table(title="Status", style="purple", title_style="green")
@@ -445,7 +456,7 @@ class Editor:
             table.add_column("Pub Year", justify="center", style="blue")
             table.add_column("Current Element", justify="center", style="magenta")
             table.add_column("Current Attribute", justify="center", style="green")
-            table.add_column("Current Offset", justify="center", style="yellow")
+            table.add_column("Starting Pos.", justify="center", style="yellow")
             table.add_column("Complete?", justify="center")
 
             if the_file in the_program.completed_files:
@@ -456,12 +467,12 @@ class Editor:
             if the_file == "":
                 status = ""
 
-            table.add_row(the_file, pub_year, the_element, the_attrib, the_offset, status)
+            table.add_row(the_file, pub_year, the_element, the_attrib, starting_pos, status)
 
             console.print(table)
 
         #Process the XML and output HTML elements for the body.
-        def process_html(the_file, element, attrib, off):
+        def process_html(the_file, element, attrib, start_pos):
             #Setup
             output_dir = the_file.split('/')[1]
             output_dir = output_dir.split('.')[0]
@@ -477,40 +488,48 @@ class Editor:
             container_elems = ["div"]
 
             #Define the functions that will do the work:
-            def process_non_container_element(off, elements, element, attrib):
+            def process_non_container_element(start_pos, elements, element, attrib):
                 chapter_content = ""
-                i = (1 - off)
+                i = 1
+                chapter_count = 1
                 
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
-                            if i > 0:
-                                with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                            if i >= start_pos:
+                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
+                                chapter_count += 1
                             i += 1
                             return
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
-                            if i > 0:
-                                with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                            if i >= start_pos:
+                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
+                                chapter_count += 1
                             i += 1
                             chapter_content = ""
                             break
                         else:
                             chapter_content += sibling.get_text()
 
-            def process_container_element(off, elements, element, attrib):
+            def process_container_element(start_pos, elements, element, attrib):
                 chapter_content = ""
-                i = (1 - off)
 
+                #Ok, this seems nuts, but... let's say your starting_pos is 7. (That is, there are six things we're skipping.) 
+                #In this case, 2 - 7 is -5.  Once the loop has incremented i six times, we're at 1.
+                # And if i >= 1, we start writing files.
+                #TODO: Figure out why this breaks if you try to set a chapter_count value and increment in the write statements.
+
+                i = (2 - start_pos)
 
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     #TODO Make sure this set of conditions triggers as expected.
                     if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
-                            if i > 0:
+                            if i >= 1:
                                 with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
                             break
@@ -522,16 +541,15 @@ class Editor:
                                     if not child.next_element.has_attr(entry):
                                         chapter_content += child.get_text()
                             else:
-                                if i > 0:
+                                if i >= 1:
                                     with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
-                                
                         elif attrib != "":
                             if child.next_element.name == element:
                                 if not child.next_element.has_attr(attrib):
                                     chapter_content += child.get_text()
                             else:
-                                if i > 0:
+                                if i >= 1:
                                     with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
 
@@ -553,24 +571,12 @@ class Editor:
                 #TODO: List is manually updated for now...improve?
 
                 if element in container_elems:
-                    #Since we have known chapter divisions, we can start numbering at 1.
-                    #TODO: evaluate this more thoroughly
-                    process_container_element(off, elements, element, attrib)
+                    process_container_element(start_pos, elements, element, attrib)
                 else:
-                    process_non_container_element(off, elements, element, attrib)
+                    process_non_container_element(start_pos, elements, element, attrib)
                 
                 the_program.completed_files.append(the_file)
 
-        def get_publication_year():
-            #These are the menu choices and the corresponding functions:
-            if the_program.publication_year == "":
-                choice = console.input(f"Enter the year of publication: ")
-            else:
-                choice = console.input(f"Enter the year of publication, or keep the current value of {the_program.publication_year}: ")
-            if choice == "":
-                pass
-            else:
-                the_program.publication_year = choice
 
         def menu():
             screen_clear()
