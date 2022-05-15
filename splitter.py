@@ -137,7 +137,7 @@ class Editor:
                 help_screen()
             elif choice.lower() == 'o!':
                 the_program.offset = 0
-            elif choice.lower() == 's!':
+            elif choice.lower() == 'y!':
                 the_program.publication_year = ""
             elif choice.lower() == 'q':
                 print("\nOk, quitting...\n")
