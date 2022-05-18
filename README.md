@@ -4,7 +4,7 @@
 
 This program aims to allow you to download an HTML version of a book on [Project Gutenberg](https://www.gutenberg.org/) and separate it into chapters for further processing without too much hassle...
 
-### Assumptions
+### Assumptions:
 Right now, the code works well with well-formed HTML.  So, it is assumed you are using a document that is well-formed.
 
 If you are processing a file where chapter content is enclosed inside `<div>`, then the program will see the `<div>` and grab all children until the next one (or the end of the file) and save these into a chapter.
@@ -14,11 +14,15 @@ If you are processing a file where chapter content is only demarcated by `<h2>` 
 This is not a perfect system, and improvements are being devised.  One obvious complication is the presence of siblings with the same name... name + attribute detection is planned to fix this.
   - (2022-05-12: Some improvements implemented. Negative matching is an option for texts where this fails.)
 
+### A note on saving files:
+
+In general, browsers have a "save webpage as" feature.  This feature often causes character encoding issues for this program.  I would recommend right-clicking, viewing page source, and copy-pasting the entire contents into input/somefile.html.
+
 ### An Example of _Bad_ HTML:
 
-Take [this book](https://www.gutenberg.org/files/68033/68033-h/68033-h.htm) (please). This book uses `<div class="chapter">`, but then only encloses titles in these sections. Books like this require a bit more planning in order to get both title and chapter content.
+Take [this book](https://www.gutenberg.org/files/68033/68033-h/68033-h.htm) (please). This book uses `<div class="chapter">`, but then only encloses titles in these sections. Books like this require a bit more planning in order to get both title and chapter content.  So far, this has been a rare case, but things like this may happen.
 
-### Caveats
+### Caveats:
 
 The program was designed with a dark background in mind (specifically, #282935), but a light mode version is in the works...
 
