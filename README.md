@@ -43,7 +43,8 @@ Now that the program is running...using the program is a four-part process.
         - This also gives access to the negative matching option
 3. Once you have decided on your element/attribute pair, you can see samples of those selections to help you choose an offset.
     - N.B. On irregularly constructed documents, there are often "chapters" that are really just prefaratory matter.  The offset allows you to say how many there and then chapter selections won't start until you've passed an offset number of those elements.
-4. Now, you can process the file.
+4. (Optional) Supply a publication year for the text if you'd like to include it in your output directory name.
+5. Now, you can process the file.
     - Files will be written to output/title/chapter_n
       - Ex: If your file is called joe.html, then the output is in output/joe/chapter_n.
 
