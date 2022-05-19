@@ -64,13 +64,14 @@ class Editor:
                     input_files[i] = f
                     i += 1
 
-            table = Table(title="Source Files", show_lines=True)
+            table = Table(title=f"Source Files in [bold cyan]{directory}/[/bold cyan]", show_lines=True)
             table.add_column("Option", style="cyan", no_wrap=True)
             table.add_column("File", justify="left", style="magenta")
-            
+
             for item,value in input_files.items():
                 table.add_row(str(item), value)
             
+            print("\n")
             console.print(table)
             
             print("\n")
