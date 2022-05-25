@@ -69,9 +69,9 @@ lxml==4.8.0; (python_version >= "2.7" and python_full_version < "3.0.0") or (pyt
 pygments==2.12.0; python_full_version >= "3.6.3" and python_full_version < "4.0.0" and python_version >= "3.6" \
     --hash=sha256:dc9c10fb40944260f6ed4c688ece0cd2048414940f1cea51b8b226318411c519 \
     --hash=sha256:5eb116118f9612ff1ee89ac96437bb6b49e8f04d8a13b514ba26f620208e26eb
-rich==12.4.3; python_full_version >= "3.6.3" and python_full_version < "4.0.0" \
-    --hash=sha256:26ef784599a9ab905ade34ff28904e4fbe9bce16e02c33c78b0229551104c146 \
-    --hash=sha256:e7550ca19aec51b216ae4c34bfce82e94a0c79bdbf95cafbf42f343d0fb3f45a
+rich==12.4.4; python_full_version >= "3.6.3" and python_full_version < "4.0.0" \
+    --hash=sha256:d2bbd99c320a2532ac71ff6a3164867884357da3e3301f0240090c5d2fdac7ec \
+    --hash=sha256:4c586de507202505346f3e32d1363eb9ed6932f0c2f63184dea88983ff4971e2
 soupsieve==2.3.2.post1; python_version >= "3.6" and python_full_version >= "3.6.0" \
     --hash=sha256:3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759 \
     --hash=sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d
