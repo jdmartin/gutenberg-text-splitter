@@ -655,7 +655,7 @@ class Editor:
             print("\n")
             generate_menu_meta_table()
             print("\n")
-            display_tei_header(the_program.title, the_program.author, the_program.publication_year, the_program.location, the_program.publisher)
+            display_tei_header(the_program.title, the_program.author, the_program.publisher, the_program.publication_year, the_program.location)
             print("\n")
             print("What would you like to do?:\n")
             print("[bold green]1[/bold green]\tSelect a Working File")
