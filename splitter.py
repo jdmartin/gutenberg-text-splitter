@@ -497,15 +497,15 @@ class Editor:
                 chapter_count = 1
                 
                 #inject TEI header
-                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
-                    output_file.write(tei_head)
+                
 
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i >= start_pos:
-                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "a", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                    output_file.write(tei_head)
                                     output_file.write(chapter_content)
                                     output_file.write(tei_bottom)
                                 chapter_count += 1
@@ -514,7 +514,8 @@ class Editor:
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i >= start_pos:
-                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "a", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                    output_file.write(tei_head)
                                     output_file.write(chapter_content)
                                     output_file.write(tei_bottom)
                                 chapter_count += 1
