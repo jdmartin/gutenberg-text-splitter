@@ -476,6 +476,10 @@ class Editor:
             output_dir = the_file.split('/')[1]
             output_dir = output_dir.split('.')[0]
             output_dir_part = ""
+
+            tei_head = """<?xml-model href="https://raw.githubusercontent.com/TEIC/TEI-Simple/master/teisimple.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader></teiHeader><text><body>"""
+            tei_bottom = """</body></text></TEI>"""
+
             if the_program.publication_year == "":
                 output_dir_part = f"{output_dir}"
             else:
@@ -492,21 +496,27 @@ class Editor:
                 i = 1
                 chapter_count = 1
                 
+                #inject TEI header
+                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                    output_file.write(tei_head)
+
                 for elem in list(elements):
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i >= start_pos:
-                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "a", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
+                                    output_file.write(tei_bottom)
                                 chapter_count += 1
                             i += 1
                             return
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i >= start_pos:
-                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "a", encoding="utf-8") as output_file:
                                     output_file.write(chapter_content)
+                                    output_file.write(tei_bottom)
                                 chapter_count += 1
                             i += 1
                             chapter_content = ""
@@ -529,8 +539,11 @@ class Editor:
                     #TODO Make sure this set of conditions triggers as expected.
                     if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
                             if i >= 1:
+                                #inject TEI header
                                 with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    output_file.write(tei_head)
                                     output_file.write(chapter_content)
+                                    output_file.write(tei_bottom)
                             break
                     
                     for child in elem.children:
@@ -541,16 +554,22 @@ class Editor:
                                         chapter_content += child.get_text()
                             else:
                                 if i >= 1:
+                                    #inject TEI header
                                     with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        output_file.write(tei_head)
                                         output_file.write(chapter_content)
+                                        output_file.write(tei_bottom)
                         elif attrib != "":
                             if child.next_element.name == element:
                                 if not child.next_element.has_attr(attrib):
                                     chapter_content += child.get_text()
                             else:
                                 if i >= 1:
+                                    #inject TEI header
                                     with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        output_file.write(tei_head)
                                         output_file.write(chapter_content)
+                                        output_file.write(tei_bottom)
 
                     i += 1
                     chapter_content = ""
