@@ -18,6 +18,10 @@ class Editor:
         self.starting_pos = 1
         self.publication_year = ""
         self.completed_files = []
+        self.title = ""
+        self.author = ""
+        self.publisher = ""
+        self.location = ""
         return
 
     def main():
@@ -98,6 +102,12 @@ class Editor:
                     the_program.selected_element_for_chapters = ""
                     the_program.starting_pos = 1
                     the_program.publication_year = ""
+                    #Clear TEI values when choosing a new file
+                    the_program.title = ""
+                    the_program.author = ""
+                    the_program.publication_year = ""
+                    the_program.publisher = ""
+                    the_program.location = ""
                 
             get_file_choice(input_files)
 
@@ -117,7 +127,12 @@ class Editor:
                     get_publication_year()
             elif choice == '5':
                 if the_program.chosen_file != "":
-                    process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos)
+                    process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos, "not_tei")
+            elif choice == '6':
+                if the_program.chosen_file != "":
+                    process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos, "tei")
+            elif choice.lower() == 't':
+                prepare_the_tei_header()
             elif choice.lower() == 's':
                 if the_program.chosen_file != "":
                     with open(the_program.chosen_file, 'r') as source_file:
@@ -132,6 +147,11 @@ class Editor:
                 the_program.selected_attrib_for_chapters = ""
                 the_program.selected_element_for_chapters = ""
                 the_program.starting_pos = 1
+                the_program.title = ""
+                the_program.author = ""
+                the_program.publication_year = ""
+                the_program.publisher = ""
+                the_program.location = ""
             elif choice.lower() == 'e!':
                 the_program.selected_element_for_chapters = ""
             elif choice.lower() == 'h':
@@ -169,6 +189,24 @@ class Editor:
                 pass
             else:
                 the_program.publication_year = choice
+
+        def display_tei_header(title, author, publisher, year, location):
+            table = Table(title="TEI Header Info", style="purple", title_style="green")
+
+            table.add_column("Title", justify="center", style="red")
+            table.add_column("Author", justify="center", style="blue")
+            table.add_column("Publisher", justify="center", style="yellow")
+            table.add_column("Year", justify="center", style="magenta")
+            table.add_column("Location", justify="center", style="green")
+            table.add_row(title, author, publisher, year, location)
+
+            console.print(table)
+        
+        def prepare_the_tei_header():
+            the_program.title = input("Title of text? (or press enter to skip): ")
+            the_program.author = input("Author's name? (or press enter to skip): ")
+            the_program.location = input("Location of Publication? (or press enter to skip): ")
+            the_program.publisher = input("Publisher? (or press enter to skip): ")
             
         def get_element_count_in_chosen_file():
             screen_clear()
@@ -471,14 +509,11 @@ class Editor:
             console.print(table)
 
         #Process the XML and output HTML elements for the body.
-        def process_html(the_file, element, attrib, start_pos):
+        def process_html(the_file, element, attrib, start_pos, type_of_file):
             #Setup
             output_dir = the_file.split('/')[1]
             output_dir = output_dir.split('.')[0]
             output_dir_part = ""
-
-            tei_head = """<?xml-model href="https://raw.githubusercontent.com/TEIC/TEI-Simple/master/teisimple.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader></teiHeader><text><body>"""
-            tei_bottom = """</body></text></TEI>"""
 
             if the_program.publication_year == "":
                 output_dir_part = f"{output_dir}"
@@ -496,18 +531,21 @@ class Editor:
                 i = 1
                 chapter_count = 1
                 
-                #inject TEI header
-                
-
                 for elem in list(elements):
+                    #inject TEI header
+                    tei_head = f"""<?xml-model href="https://raw.githubusercontent.com/TEIC/TEI-Simple/master/teisimple.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><titleStmt><title>{the_program.title}</title><author>{the_program.author}</author></titleStmt><publicationStmt><publisher>{the_program.publisher}</publisher><pubPlace>{the_program.location}</pubPlace><date>{the_program.publication_year}</date></publicationStmt></teiHeader><text><body><div type="chapter" n="{chapter_count}">"""
+                    tei_bottom = """</div></body></text></TEI>"""
                     chapter_content += elem.get_text()
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i >= start_pos:
                                 with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
-                                    output_file.write(tei_head)
-                                    output_file.write(chapter_content)
-                                    output_file.write(tei_bottom)
+                                    if type_of_file == "tei":
+                                        output_file.write(tei_head)
+                                        output_file.write(chapter_content)
+                                        output_file.write(tei_bottom)
+                                    elif type_of_file == "not_tei":
+                                        output_file.write(chapter_content)
                                 chapter_count += 1
                             i += 1
                             return
@@ -515,9 +553,12 @@ class Editor:
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i >= start_pos:
                                 with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
-                                    output_file.write(tei_head)
-                                    output_file.write(chapter_content)
-                                    output_file.write(tei_bottom)
+                                    if type_of_file == "tei":
+                                        output_file.write(tei_head)
+                                        output_file.write(chapter_content)
+                                        output_file.write(tei_bottom)
+                                    elif type_of_file == "not_tei":
+                                        output_file.write(chapter_content)
                                 chapter_count += 1
                             i += 1
                             chapter_content = ""
@@ -536,15 +577,21 @@ class Editor:
                 i = (2 - start_pos)
 
                 for elem in list(elements):
+                    #inject TEI header
+                    tei_head = f"""<?xml-model href="https://raw.githubusercontent.com/TEIC/TEI-Simple/master/teisimple.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><titleStmt><title>{the_program.title}</title><author>{the_program.author}</author></titleStmt><publicationStmt><publisher>{the_program.publisher}</publisher><pubPlace>{the_program.location}</pubPlace><date>{the_program.publication_year}</date></publicationStmt></teiHeader><text><body><div type="chapter" n="{i}">"""
+                    tei_bottom = """</div></body></text></TEI>"""
                     chapter_content += elem.get_text()
                     #TODO Make sure this set of conditions triggers as expected.
                     if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
                             if i >= 1:
                                 #inject TEI header
                                 with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                    output_file.write(tei_head)
-                                    output_file.write(chapter_content)
-                                    output_file.write(tei_bottom)
+                                    if type_of_file == "tei":
+                                        output_file.write(tei_head)
+                                        output_file.write(chapter_content)
+                                        output_file.write(tei_bottom)
+                                    elif type_of_file == "not_tei":
+                                        output_file.write(chapter_content)
                             break
                     
                     for child in elem.children:
@@ -557,9 +604,12 @@ class Editor:
                                 if i >= 1:
                                     #inject TEI header
                                     with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                        output_file.write(tei_head)
-                                        output_file.write(chapter_content)
-                                        output_file.write(tei_bottom)
+                                        if type_of_file == "tei":
+                                            output_file.write(tei_head)
+                                            output_file.write(chapter_content)
+                                            output_file.write(tei_bottom)
+                                        elif type_of_file == "not_tei":
+                                            output_file.write(chapter_content)
                         elif attrib != "":
                             if child.next_element.name == element:
                                 if not child.next_element.has_attr(attrib):
@@ -568,9 +618,12 @@ class Editor:
                                 if i >= 1:
                                     #inject TEI header
                                     with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                        output_file.write(tei_head)
-                                        output_file.write(chapter_content)
-                                        output_file.write(tei_bottom)
+                                        if type_of_file == "tei":
+                                            output_file.write(tei_head)
+                                            output_file.write(chapter_content)
+                                            output_file.write(tei_bottom)
+                                        elif type_of_file == "not_tei":
+                                            output_file.write(chapter_content)
 
                     i += 1
                     chapter_content = ""
@@ -602,13 +655,17 @@ class Editor:
             print("\n")
             generate_menu_meta_table()
             print("\n")
+            display_tei_header(the_program.title, the_program.author, the_program.publication_year, the_program.location, the_program.publisher)
+            print("\n")
             print("What would you like to do?:\n")
             print("[bold green]1[/bold green]\tSelect a Working File")
             print("[bold green]2[/bold green]\tAnalyze Working File")
             print("[bold green]3[/bold green]\tSee Samples of Element/Attribute")
             print("[bold green]4[/bold green]\tSet Publication Year")
             print("[bold green]5[/bold green]\tProcess the File")
+            print("[bold green]6[/bold green]\tProcess the File with TEI")
             print("\n")
+            print("[bold green]T[/bold green]\tPrepare the TEI header")
             print("[bold green]S[/bold green]\tExamine the source file")
             print("\n")
             print("[bold green]A![/bold green]\tClear Current Attribute Choice")
