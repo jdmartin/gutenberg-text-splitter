@@ -1,4 +1,5 @@
 import os
+import search
 
 from bs4 import BeautifulSoup
 from rich import print
@@ -131,6 +132,8 @@ class Editor:
             elif choice == '6':
                 if the_program.chosen_file != "":
                     process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos, "tei")
+            elif choice.lower() == 'f':
+                search.search_menu()
             elif choice.lower() == 't':
                 prepare_the_tei_header()
             elif choice.lower() == 's':
@@ -665,6 +668,7 @@ class Editor:
             print("[bold green]5[/bold green]\tProcess the File")
             print("[bold green]6[/bold green]\tProcess the File with TEI")
             print("\n")
+            print("[bold green]F[/bold green]\tFind and Download a File from Proj. Gutenberg")
             print("[bold green]T[/bold green]\tPrepare the TEI header")
             print("[bold green]S[/bold green]\tExamine the source file")
             print("\n")

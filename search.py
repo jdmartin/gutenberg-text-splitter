@@ -1,0 +1,99 @@
+import os
+import pandas as pd
+import requests
+from rich import print
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
+
+console = Console()
+list_of_files = os.listdir('input')
+#Load the Catalog from disk (or TODO warn to create it!)
+df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
+
+def get_name_for_file():
+    while True:
+        choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) ")
+        test_choice = choice + ".html"
+        if choice == "":
+            return
+        
+        elif test_choice in list_of_files:
+            print("Sorry, that name is already taken.")
+            
+        else:
+            return choice
+
+def get_selection_by_id(type_search, list_of_ids):
+    choice = input("Which book would you like? Or just hit enter to select none of these: ")
+    if choice in list_of_ids:
+        filename = get_name_for_file()
+        download_book_by_id(choice, filename)
+    elif choice == "":
+        search_menu()
+    else:
+        print("Sorry, that's not one of the choices.\n")
+        if type_search == "title":
+            search_for_title()
+        elif type_search == "author":
+            search_for_author()
+
+
+def download_book_by_id(book_id, filename):
+    #Sample Format for HTML File: https://www.gutenberg.org/files/1000/1000-h/1000-h.htm
+    url = f'https://www.gutenberg.org/files/{book_id}/{book_id}-h/{book_id}-h.htm'
+
+    r = requests.get(url, allow_redirects=False)
+    open(f'input/{filename}.html', 'wb').write(r.content)
+
+def search_for_author():
+    list_of_ids = []
+    author_choice = input("What author would you like to find? ")
+    author_results = df.loc[df['Authors'].str.contains(author_choice, na=False, case=False)]
+
+    table = Table(title=f"Results", min_width=60, style="purple", show_lines=True)
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Author", justify="left", style="magenta")
+    table.add_column("Title", justify="left", style="green")
+            
+    for index, row in author_results.iterrows():
+        table.add_row(str(row['Text#']), row['Authors'], row['Title'])
+        list_of_ids.append(str(row['Text#']))
+    
+    console.print(table)
+    get_selection_by_id("author", list_of_ids)
+
+def search_for_title():
+    list_of_ids = []
+    title_choice = input("What book would you like to find? ")
+    title_results = df.loc[df['Title'].str.contains(title_choice, na=False, case=False)]
+
+    table = Table(title=f"Results", min_width=60, style="purple", show_lines=True)
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Author", justify="left", style="magenta")
+    table.add_column("Title", justify="left", style="green")
+
+    for index, row in title_results.iterrows():
+        table.add_row(str(row['Text#']), row['Authors'], row['Title'])
+        list_of_ids.append(str(row['Text#']))
+    
+    console.print(table)
+    get_selection_by_id("title",list_of_ids)
+
+def search_menu():
+    console.clear()
+    print("\n\n")
+    print("\t([bold red]A[/bold red])uthor Search")
+    print("\t([bold red]T[/bold red])itle Search")
+    print("\n")
+    print("\t([bold red]M[/bold red])ain Menu\n")
+    choice = input("What would you like to do? ")
+
+    if choice.lower() == 'a':
+        search_for_author()
+    elif choice.lower() == 't':
+        search_for_title()
+    elif choice.lower() == 'm':
+        return    
+    else:
+        search_menu()
