@@ -89,7 +89,7 @@ class Editor:
                 valid_keys = set(input_files.keys())
 
                 def reset_the_file_and_tei():
-                    the_program.chosen_file = file_selection
+                    the_program.chosen_file = ""
                     #Clear file-specifc values when choosing a new file
                     the_program.selected_attrib_for_chapters = ""
                     the_program.selected_element_for_chapters = ""
@@ -128,8 +128,8 @@ class Editor:
                     get_file_choice(files)
                 else:
                     choice = int(choice)
-                    file_selection = files.get(choice)
                     reset_the_file_and_tei()
+                    the_program.chosen_file = files.get(choice)
                 
             get_file_choice(input_files)
 
@@ -185,7 +185,11 @@ class Editor:
             elif choice.lower() == 'y!':
                 the_program.publication_year = ""
             elif choice.lower() == 'q':
-                print("\nOk, quitting...\n")
+                screen_clear()
+                with open('meta/quitting.txt', 'r') as moo:
+                    oom = moo.read()
+                    print(oom)
+                    print("\n")
                 quit()
             else:
                 print("Sorry, that's not a valid choice. Try again.\n")

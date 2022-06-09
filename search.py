@@ -40,32 +40,30 @@ def display_results_table(results, type_search):
     get_selection_by_id(type_search, list_of_ids)
 
 def get_name_for_file():
-    while True:
-        choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) ")
-        test_choice = choice + ".html"
-        if choice == "":
-            return
-        
-        elif test_choice in list_of_files:
-            print("Sorry, that name is already taken.")
-            
-        else:
-            return choice
+    choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) Or press enter to cancel. ")
+    test_choice = choice + ".html"
+    if test_choice == ".html":
+        return
+    elif test_choice in list_of_files:
+        print("Sorry, that name is already taken.")
+        get_name_for_file()
+    else:
+        return choice
 
 def get_selection_by_id(type_search, list_of_ids):
     choice = input("Which book would you like? Or just hit enter to select none of these: ")
     if choice in list_of_ids:
         filename = get_name_for_file()
-        download_book_by_id(choice, filename)
+        if filename == None:
+            search_menu()
+        else:
+            download_book_by_id(choice, filename)
     elif choice == "":
         search_menu()
     else:
         print("Sorry, that's not one of the choices.\n")
-        if type_search == "title":
-            search_for_title()
-        elif type_search == "author":
-            search_for_author()
-
+        get_selection_by_id(type_search, list_of_ids)
+        
 
 def download_book_by_id(book_id, filename):
     #Sample Format for HTML File: https://www.gutenberg.org/files/1000/1000-h/1000-h.htm
