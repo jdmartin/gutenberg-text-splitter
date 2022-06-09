@@ -1,6 +1,8 @@
+from distutils.command import check
 import os
 import pandas as pd
 import requests
+from os.path import exists
 from rich import print
 from rich.console import Console
 from rich.table import Table
@@ -8,8 +10,36 @@ from rich.text import Text
 
 console = Console()
 list_of_files = os.listdir('input')
-#Load the Catalog from disk (or TODO warn to create it!)
-df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
+
+def check_file_exists():
+    if not exists('meta/pg_catalog.csv'):
+        choice = input("Looks like we don't have the Project Gutenberg catalog. Would you like to download it now? (y/n) ")
+        if choice.lower() == 'y':
+            url = f'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
+
+            r = requests.get(url, allow_redirects=False)
+            open(f'meta/pg_catalog.csv', 'wb').write(r.content)
+        elif choice.lower() == 'n':
+            return
+        else:
+            check_file_exists()
+    df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
+    return df
+
+
+def display_results_table(results, type_search):
+    list_of_ids = []
+    table = Table(title=f"Results", min_width=60, style="purple", show_lines=True)
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Author", justify="left", style="magenta")
+    table.add_column("Title", justify="left", style="green")
+
+    for index, row in results.iterrows():
+        table.add_row(str(row['Text#']), row['Authors'], row['Title'])
+        list_of_ids.append(str(row['Text#']))
+    
+    console.print(table)
+    get_selection_by_id(type_search, list_of_ids)
 
 def get_name_for_file():
     while True:
@@ -46,42 +76,28 @@ def download_book_by_id(book_id, filename):
     r = requests.get(url, allow_redirects=False)
     open(f'input/{filename}.html', 'wb').write(r.content)
 
-def search_for_author():
-    list_of_ids = []
-    author_choice = input("What author would you like to find? ")
-    author_results = df.loc[df['Authors'].str.contains(author_choice, na=False, case=False)]
+def search_for_author(df):
+    author_choice = input("What author would you like to find? Or press enter to go back. ")
+    if author_choice == "":
+        search_menu()
+    else:
+        author_results = df.loc[df['Authors'].str.contains(author_choice, na=False, case=False)]
 
-    table = Table(title=f"Results", min_width=60, style="purple", show_lines=True)
-    table.add_column("ID", style="cyan", no_wrap=True)
-    table.add_column("Author", justify="left", style="magenta")
-    table.add_column("Title", justify="left", style="green")
-            
-    for index, row in author_results.iterrows():
-        table.add_row(str(row['Text#']), row['Authors'], row['Title'])
-        list_of_ids.append(str(row['Text#']))
-    
-    console.print(table)
-    get_selection_by_id("author", list_of_ids)
+        display_results_table(author_results, "author")
 
-def search_for_title():
-    list_of_ids = []
-    title_choice = input("What book would you like to find? ")
-    title_results = df.loc[df['Title'].str.contains(title_choice, na=False, case=False)]
+def search_for_title(df):
+    title_choice = input("What book would you like to find? Or press enter to go back. ")
+    if title_choice == "":
+        search_menu()
+    else:
+        title_results = df.loc[df['Title'].str.contains(title_choice, na=False, case=False)]
 
-    table = Table(title=f"Results", min_width=60, style="purple", show_lines=True)
-    table.add_column("ID", style="cyan", no_wrap=True)
-    table.add_column("Author", justify="left", style="magenta")
-    table.add_column("Title", justify="left", style="green")
-
-    for index, row in title_results.iterrows():
-        table.add_row(str(row['Text#']), row['Authors'], row['Title'])
-        list_of_ids.append(str(row['Text#']))
-    
-    console.print(table)
-    get_selection_by_id("title",list_of_ids)
+        display_results_table(title_results, "title")
 
 def search_menu():
     console.clear()
+    df = check_file_exists()
+
     print("\n\n")
     print("\t([bold red]A[/bold red])uthor Search")
     print("\t([bold red]T[/bold red])itle Search")
@@ -90,10 +106,11 @@ def search_menu():
     choice = input("What would you like to do? ")
 
     if choice.lower() == 'a':
-        search_for_author()
+        search_for_author(df)
     elif choice.lower() == 't':
-        search_for_title()
+        search_for_title(df)
     elif choice.lower() == 'm':
         return    
     else:
         search_menu()
+
