@@ -70,7 +70,11 @@ def download_book_by_id(book_id, filename):
     url = f'https://www.gutenberg.org/files/{book_id}/{book_id}-h/{book_id}-h.htm'
 
     r = requests.get(url, allow_redirects=False)
-    open(f'input/{filename}.html', 'wb').write(r.content)
+    if r.status_code == 404:
+        print("\nSorry, I can't find an HTML version of that text.")
+        input("Press enter to continue...\n")
+    if r.status_code == 200:
+        open(f'input/{filename}.html', 'wb').write(r.content)
 
 def search_for_author(df):
     author_choice = input("What author would you like to find? Or press enter to go back. ")
