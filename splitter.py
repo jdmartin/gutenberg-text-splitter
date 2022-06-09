@@ -4,6 +4,7 @@ import search
 from bs4 import BeautifulSoup
 from rich import print
 from rich.console import Console
+from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
@@ -84,14 +85,40 @@ class Editor:
             def get_file_choice(files):
                 #These are the menu choices and the corresponding functions:
                 file_selection = the_program.chosen_file
-                choice = console.input("Enter the number of the file you'd like to use, or '[bold green]M[/bold green]' for the Main Menu: ")
+                choice = console.input("Enter the number of the file you'd like to use, '[bold green]D[/bold green]' to delete a file, or '[bold green]M[/bold green]' for the Main Menu: ")
                 valid_keys = set(input_files.keys())
 
-                if choice.lower() == "m":
+                def remove_the_file(delete_choice, valid_keys):
+                    if int(delete_choice) in valid_keys:
+                        delete_confirm = Prompt.ask(f"Ok, I'll delete [red]{files.get(int(delete_choice))}[/red]. Is that right? (y/n) ")
+                        if delete_confirm.lower() == 'y':
+                            os.remove(files.get(int(delete_choice)))
+                            if the_program.chosen_file == files.get(int(delete_choice)):
+                                the_program.chosen_file = ""
+                                the_program.selected_attrib_for_chapters = ""
+                                the_program.selected_element_for_chapters = ""
+                                the_program.starting_pos = 1
+                                the_program.publication_year = ""
+                                the_program.title = ""
+                                the_program.author = ""
+                                the_program.publication_year = ""
+                                the_program.publisher = ""
+                                the_program.location = ""
+                        else:
+                            menu()
+
+                if choice.lower() == "d":
+                    delete_choice = input("Which file would you like to remove? ")
+                    if delete_choice != "":
+                        remove_the_file(delete_choice, valid_keys)
+                    else:
+                        menu()
+
+                elif choice.lower() == "m":
                     #Don't erase a choice if it exists
                     return
 
-                if choice.lower() not in str(valid_keys):
+                elif choice.lower() not in str(valid_keys):
                     print("Sorry, that's not a valid choice. Try again.\n")
                     get_file_choice(files)
                 else:
