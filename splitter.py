@@ -88,22 +88,27 @@ class Editor:
                 choice = console.input("Enter the number of the file you'd like to use, '[bold green]D[/bold green]' to delete a file, or '[bold green]M[/bold green]' for the Main Menu: ")
                 valid_keys = set(input_files.keys())
 
+                def reset_the_file_and_tei():
+                    the_program.chosen_file = file_selection
+                    #Clear file-specifc values when choosing a new file
+                    the_program.selected_attrib_for_chapters = ""
+                    the_program.selected_element_for_chapters = ""
+                    the_program.starting_pos = 1
+                    the_program.publication_year = ""
+                    #Clear TEI values when choosing a new file
+                    the_program.title = ""
+                    the_program.author = ""
+                    the_program.publication_year = ""
+                    the_program.publisher = ""
+                    the_program.location = ""
+
                 def remove_the_file(delete_choice, valid_keys):
                     if int(delete_choice) in valid_keys:
                         delete_confirm = Prompt.ask(f"Ok, I'll delete [red]{files.get(int(delete_choice))}[/red]. Is that right? (y/n) ")
                         if delete_confirm.lower() == 'y':
                             os.remove(files.get(int(delete_choice)))
                             if the_program.chosen_file == files.get(int(delete_choice)):
-                                the_program.chosen_file = ""
-                                the_program.selected_attrib_for_chapters = ""
-                                the_program.selected_element_for_chapters = ""
-                                the_program.starting_pos = 1
-                                the_program.publication_year = ""
-                                the_program.title = ""
-                                the_program.author = ""
-                                the_program.publication_year = ""
-                                the_program.publisher = ""
-                                the_program.location = ""
+                                reset_the_file_and_tei()
                         else:
                             menu()
 
@@ -124,18 +129,7 @@ class Editor:
                 else:
                     choice = int(choice)
                     file_selection = files.get(choice)
-                    the_program.chosen_file = file_selection
-                    #Clear file-specifc values when choosing a new file
-                    the_program.selected_attrib_for_chapters = ""
-                    the_program.selected_element_for_chapters = ""
-                    the_program.starting_pos = 1
-                    the_program.publication_year = ""
-                    #Clear TEI values when choosing a new file
-                    the_program.title = ""
-                    the_program.author = ""
-                    the_program.publication_year = ""
-                    the_program.publisher = ""
-                    the_program.location = ""
+                    reset_the_file_and_tei()
                 
             get_file_choice(input_files)
 
