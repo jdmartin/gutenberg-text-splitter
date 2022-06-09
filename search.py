@@ -1,4 +1,3 @@
-from distutils.command import check
 import os
 import pandas as pd
 import requests
@@ -6,7 +5,6 @@ from os.path import exists
 from rich import print
 from rich.console import Console
 from rich.table import Table
-from rich.text import Text
 
 console = Console()
 list_of_files = os.listdir('input')
