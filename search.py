@@ -77,7 +77,7 @@ def search_for_author(df):
     if author_choice == "":
         search_menu()
     else:
-        author_results = df.loc[df['Authors'].str.contains(author_choice, na=False, case=False)]
+        author_results = df.loc[(df['Authors'].str.contains(author_choice, na=False, case=False) & (df['Type']=="Text"))]
 
         display_results_table(author_results, "author")
 
@@ -86,7 +86,7 @@ def search_for_title(df):
     if title_choice == "":
         search_menu()
     else:
-        title_results = df.loc[df['Title'].str.contains(title_choice, na=False, case=False)]
+        title_results = df[(df['Title'].str.contains(title_choice, na=False, case=False) & (df['Type']=="Text"))]
 
         display_results_table(title_results, "title")
 
