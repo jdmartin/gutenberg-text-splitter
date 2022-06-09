@@ -185,7 +185,11 @@ class Editor:
             elif choice.lower() == 'y!':
                 the_program.publication_year = ""
             elif choice.lower() == 'q':
-                print("\nOk, quitting...\n")
+                screen_clear()
+                with open('meta/quitting.txt', 'r') as moo:
+                    oom = moo.read()
+                    print(oom)
+                    print("\n")
                 quit()
             else:
                 print("Sorry, that's not a valid choice. Try again.\n")
