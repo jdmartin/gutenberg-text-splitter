@@ -567,12 +567,13 @@ class Editor:
                     for sibling in elem.next_siblings:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i >= start_pos:
-                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
-                                    if type_of_file == "tei":
+                                if type_of_file == "tei":
+                                    with open(f"output/{output_dir_part}/tei_chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(tei_head)
                                         output_file.write(chapter_content)
                                         output_file.write(tei_bottom)
-                                    elif type_of_file == "not_tei":
+                                else:
+                                    with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 chapter_count += 1
                             i += 1
@@ -580,12 +581,13 @@ class Editor:
 
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i >= start_pos:
-                                with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
-                                    if type_of_file == "tei":
+                                if type_of_file == "tei":
+                                    with open(f"output/{output_dir_part}/tei_chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(tei_head)
                                         output_file.write(chapter_content)
                                         output_file.write(tei_bottom)
-                                    elif type_of_file == "not_tei":
+                                else:
+                                    with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 chapter_count += 1
                             i += 1
@@ -613,12 +615,13 @@ class Editor:
                     if "PROJECT GUTENBERG EBOOK" in elem.next_element.text:
                             if i >= 1:
                                 #inject TEI header
-                                with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                    if type_of_file == "tei":
+                                if type_of_file == "tei":
+                                    with open(f"output/{output_dir_part}/tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(tei_head)
                                         output_file.write(chapter_content)
                                         output_file.write(tei_bottom)
-                                    elif type_of_file == "not_tei":
+                                else:
+                                    with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                             break
                     
@@ -631,12 +634,13 @@ class Editor:
                             else:
                                 if i >= 1:
                                     #inject TEI header
-                                    with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                        if type_of_file == "tei":
+                                    if type_of_file == "tei":
+                                        with open(f"output/{output_dir_part}/tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             output_file.write(tei_head)
                                             output_file.write(chapter_content)
                                             output_file.write(tei_bottom)
-                                        elif type_of_file == "not_tei":
+                                    else:
+                                        with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             output_file.write(chapter_content)
                         elif attrib != "":
                             if child.next_element.name == element:
@@ -645,12 +649,14 @@ class Editor:
                             else:
                                 if i >= 1:
                                     #inject TEI header
-                                    with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
-                                        if type_of_file == "tei":
-                                            output_file.write(tei_head)
-                                            output_file.write(chapter_content)
-                                            output_file.write(tei_bottom)
-                                        elif type_of_file == "not_tei":
+                                    if type_of_file == "tei":
+                                        with open(f"output/{output_dir_part}/tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                            if type_of_file == "tei":
+                                                output_file.write(tei_head)
+                                                output_file.write(chapter_content)
+                                                output_file.write(tei_bottom)
+                                    else:
+                                        with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             output_file.write(chapter_content)
 
                     i += 1
