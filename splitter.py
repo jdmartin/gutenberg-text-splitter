@@ -25,6 +25,7 @@ class Editor:
         self.author = ""
         self.publisher = ""
         self.location = ""
+        self.custom_file_prefix = ""
         return
 
     def main():
@@ -96,6 +97,7 @@ class Editor:
                     the_program.selected_element_for_chapters = ""
                     the_program.starting_pos = 1
                     the_program.publication_year = ""
+                    the_program.custom_file_prefix = ""
                     #Clear TEI values when choosing a new file
                     the_program.title = ""
                     the_program.author = ""
@@ -156,6 +158,8 @@ class Editor:
                     process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos, "tei")
             elif choice.lower() == 'f':
                 search.search_menu()
+            elif choice.lower() == 'p':
+                get_custom_chapter_prefix()
             elif choice.lower() == 't':
                 prepare_the_tei_header()
             elif choice.lower() == 's':
@@ -196,6 +200,16 @@ class Editor:
                 print("Sorry, that's not a valid choice. Try again.\n")
                 get_menu_choice()
 
+        def get_custom_chapter_prefix():
+            if the_program.custom_file_prefix == "":
+                choice = console.input(f"Enter a prefix for your chapter files (Format will be '(prefix)chapter_n': ")
+            else:
+                choice = console.input(f"Enter a prefix for your chapter files (Format will be '(prefix)chapter_n', or press enter to keep the current value of [orange1]{the_program.custom_file_prefix}[/orange1]: ")
+            if choice == "":
+                pass
+            else:
+                the_program.custom_file_prefix = choice
+
         def get_starting_pos():
             #Count the number of 'element' that happen before the chapters begin, and subtract from 1 to get the right starting place for this counter.
             choice = console.input(f"\nSelect starting position for chapter output (or enter keeps current value: {the_program.starting_pos}): ")
@@ -213,7 +227,7 @@ class Editor:
             if the_program.publication_year == "":
                 choice = console.input(f"Enter the year of publication: ")
             else:
-                choice = console.input(f"Enter the year of publication, or keep the current value of {the_program.publication_year}: ")
+                choice = console.input(f"Enter the year of publication, or press enter to keep the current value of [blue]{the_program.publication_year}[/blue]: ")
             if choice == "":
                 pass
             else:
@@ -514,6 +528,7 @@ class Editor:
             the_element = the_program.selected_element_for_chapters
             the_attrib = the_program.selected_attrib_for_chapters
             starting_pos = str(the_program.starting_pos)
+            prefix = the_program.custom_file_prefix
             status = ""
 
             table = Table(title="Status", style="purple", title_style="green")
@@ -523,6 +538,7 @@ class Editor:
             table.add_column("Current Element", justify="center", style="magenta")
             table.add_column("Current Attribute", justify="center", style="green")
             table.add_column("Starting Pos.", justify="center", style="yellow")
+            table.add_column("Chapter File Prefix", justify="center", style="orange1")
             table.add_column("Complete?", justify="center")
 
             if the_file in the_program.completed_files:
@@ -533,7 +549,7 @@ class Editor:
             if the_file == "":
                 status = ""
 
-            table.add_row(the_file, pub_year, the_element, the_attrib, starting_pos, status)
+            table.add_row(the_file, pub_year, the_element, the_attrib, starting_pos, prefix, status)
 
             console.print(table)
 
@@ -569,12 +585,12 @@ class Editor:
                         if "PROJECT GUTENBERG EBOOK" in sibling.text:
                             if i >= start_pos:
                                 if type_of_file == "tei":
-                                    with open(f"output/{output_dir_part}/tei_chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}tei_chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(tei_head)
                                         output_file.write(chapter_content)
                                         output_file.write(tei_bottom)
                                 else:
-                                    with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 chapter_count += 1
                             i += 1
@@ -583,12 +599,12 @@ class Editor:
                         if sibling.next_element.name == f'{element}' or sibling.next_sibling == None:
                             if i >= start_pos:
                                 if type_of_file == "tei":
-                                    with open(f"output/{output_dir_part}/tei_chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}tei_chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(tei_head)
                                         output_file.write(chapter_content)
                                         output_file.write(tei_bottom)
                                 else:
-                                    with open(f"output/{output_dir_part}/chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}chapter_" + str(chapter_count), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                                 chapter_count += 1
                             i += 1
@@ -617,12 +633,12 @@ class Editor:
                             if i >= 1:
                                 #inject TEI header
                                 if type_of_file == "tei":
-                                    with open(f"output/{output_dir_part}/tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(tei_head)
                                         output_file.write(chapter_content)
                                         output_file.write(tei_bottom)
                                 else:
-                                    with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                    with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                         output_file.write(chapter_content)
                             break
                     
@@ -636,12 +652,12 @@ class Editor:
                                 if i >= 1:
                                     #inject TEI header
                                     if type_of_file == "tei":
-                                        with open(f"output/{output_dir_part}/tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             output_file.write(tei_head)
                                             output_file.write(chapter_content)
                                             output_file.write(tei_bottom)
                                     else:
-                                        with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             output_file.write(chapter_content)
                         elif attrib != "":
                             if child.next_element.name == element:
@@ -651,13 +667,13 @@ class Editor:
                                 if i >= 1:
                                     #inject TEI header
                                     if type_of_file == "tei":
-                                        with open(f"output/{output_dir_part}/tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}tei_chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             if type_of_file == "tei":
                                                 output_file.write(tei_head)
                                                 output_file.write(chapter_content)
                                                 output_file.write(tei_bottom)
                                     else:
-                                        with open(f"output/{output_dir_part}/chapter_" + str(i), "w", encoding="utf-8") as output_file:
+                                        with open(f"output/{output_dir_part}/{the_program.custom_file_prefix}chapter_" + str(i), "w", encoding="utf-8") as output_file:
                                             output_file.write(chapter_content)
 
                     i += 1
@@ -701,6 +717,7 @@ class Editor:
             print("[bold green]6[/bold green]\tProcess the File with TEI")
             print("\n")
             print("[bold green]F[/bold green]\tFind and Download a File from Proj. Gutenberg")
+            print("[bold green]P[/bold green]\tSet Custom Chapter File Prefix")
             print("[bold green]T[/bold green]\tPrepare the TEI header")
             print("[bold green]S[/bold green]\tExamine the source file")
             print("\n")
