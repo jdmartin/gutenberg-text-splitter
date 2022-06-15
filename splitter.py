@@ -204,7 +204,7 @@ class Editor:
             if the_program.custom_file_prefix == "":
                 choice = console.input(f"Enter a prefix for your chapter files (Format will be '(prefix)chapter_n': ")
             else:
-                choice = console.input(f"Enter a prefix for your chapter files (Format will be '(prefix)chapter_n', or keep the current value of {the_program.custom_file_prefix}: ")
+                choice = console.input(f"Enter a prefix for your chapter files (Format will be '(prefix)chapter_n', or press enter to keep the current value of [orange1]{the_program.custom_file_prefix}[/orange1]: ")
             if choice == "":
                 pass
             else:
@@ -227,7 +227,7 @@ class Editor:
             if the_program.publication_year == "":
                 choice = console.input(f"Enter the year of publication: ")
             else:
-                choice = console.input(f"Enter the year of publication, or keep the current value of {the_program.publication_year}: ")
+                choice = console.input(f"Enter the year of publication, or press enter to keep the current value of [blue]{the_program.publication_year}[/blue]: ")
             if choice == "":
                 pass
             else:
