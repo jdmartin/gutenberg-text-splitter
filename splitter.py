@@ -1,5 +1,4 @@
 import os
-import search
 
 from bs4 import BeautifulSoup
 from rich import print
@@ -8,6 +7,8 @@ from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+
+import search
 
 console = Console()
 

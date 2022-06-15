@@ -1,7 +1,8 @@
 import os
+from os.path import exists
+
 import pandas as pd
 import requests
-from os.path import exists
 from rich import print
 from rich.console import Console
 from rich.table import Table
