@@ -77,6 +77,17 @@ def download_book_by_id(book_id, filename):
     if r.status_code == 200:
         open(f'input/{filename}.html', 'wb').write(r.content)
 
+def update_the_catalog():
+    cat_url = 'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
+    
+    print("Starting download...")
+    r = requests.get(cat_url, allow_redirects=False)
+    if r.status_code == 404:
+        print(f"\nSorry, I can't download that file at this time. Server Responded: {r.status_code}")
+        input("Press enter to continue...\n")
+    if r.status_code == 200:
+        open(f'meta/pg_catalog.csv', 'wb').write(r.content)
+
 def search_for_author(df):
     author_choice = input("What author would you like to find? Or press enter to go back. ")
     if author_choice == "":
@@ -103,6 +114,7 @@ def search_menu():
     print("\t([bold red]A[/bold red])uthor Search")
     print("\t([bold red]T[/bold red])itle Search")
     print("\n")
+    print("\t([bold red]U[/bold red]pdate the Project Gutenberg Catalog)")
     print("\t([bold red]M[/bold red])ain Menu\n")
     choice = input("What would you like to do? ")
 
@@ -110,6 +122,8 @@ def search_menu():
         search_for_author(df)
     elif choice.lower() == 't':
         search_for_title(df)
+    elif choice.lower() == 'u':
+        update_the_catalog()
     elif choice.lower() == 'm':
         return    
     else:
