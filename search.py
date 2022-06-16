@@ -124,15 +124,15 @@ def refine_results(result_set):
     if refinement == "":
         search_menu()
     elif refinement_type.lower() == 'a':
-        new_df = result_set[result_set['Authors'].str.lower().str.contains(refinement)]
+        new_df = result_set[result_set['Authors'].str.lower().str.contains(refinement.lower())]
         console.clear()
         display_results_table(new_df, "refined")
     elif refinement_type.lower() == 't':
-        new_df = result_set[result_set['Title'].str.lower().str.contains(refinement)]
+        new_df = result_set[result_set['Title'].str.lower().str.contains(refinement.lower())]
         console.clear()
         display_results_table(new_df, "refined")
     elif refinement_type.lower() == 's':
-        new_df = result_set[result_set['Subjects'].str.lower().str.contains(refinement)]
+        new_df = result_set[result_set['Subjects'].str.lower().str.contains(refinement.lower())]
         console.clear()
         display_results_table(new_df, "refined")
     else:
