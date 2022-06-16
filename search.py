@@ -114,7 +114,7 @@ def search_menu():
     print("\t([bold red]A[/bold red])uthor Search")
     print("\t([bold red]T[/bold red])itle Search")
     print("\n")
-    print("\t([bold red]U[/bold red]pdate the Project Gutenberg Catalog)")
+    print("\t([bold red]U[/bold red])pdate the Project Gutenberg Catalog")
     print("\t([bold red]M[/bold red])ain Menu\n")
     choice = input("What would you like to do? ")
 
