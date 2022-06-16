@@ -32,13 +32,14 @@ def display_results_table(results, type_search):
     table.add_column("ID", style="cyan", no_wrap=True)
     table.add_column("Author", justify="left", style="magenta")
     table.add_column("Title", justify="left", style="green")
+    table.add_column("Subjects", justify="left", style="white")
 
     for index, row in results.iterrows():
-        table.add_row(str(row['Text#']), row['Authors'], row['Title'])
+        table.add_row(str(row['Text#']), row['Authors'], row['Title'], row['Subjects'])
         list_of_ids.append(str(row['Text#']))
     
     console.print(table)
-    get_selection_by_id(type_search, list_of_ids)
+    get_selection_by_id(type_search, list_of_ids, results)
 
 def get_name_for_file():
     choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) Or press enter to cancel. ")
@@ -51,14 +52,16 @@ def get_name_for_file():
     else:
         return choice
 
-def get_selection_by_id(type_search, list_of_ids):
-    choice = input("Which book would you like? Or just hit enter to select none of these: ")
+def get_selection_by_id(type_search, list_of_ids, results):
+    choice = console.input("Which book would you like? You can also enter [bold red]R[/bold red] to refine the results, or just hit enter to select none of these: ")
     if choice in list_of_ids:
         filename = get_name_for_file()
         if filename == None:
             search_menu()
         else:
             download_book_by_id(choice, filename)
+    elif choice.lower() == 'r':
+        refine_results(results)
     elif choice == "":
         search_menu()
     else:
@@ -106,12 +109,43 @@ def search_for_title(df):
 
         display_results_table(title_results, "title")
 
+def search_for_subject(df):
+    subject_choice = input("What subject would you like to find? Or press enter to go back. ")
+    if subject_choice == "":
+        search_menu()
+    else:
+        subject_results = df[(df['Subjects'].str.contains(subject_choice, na=False, case=False) & (df['Type']=="Text"))]
+
+        display_results_table(subject_results, "subject")
+
+def refine_results(result_set):
+    refinement_type = console.input("Would you like to filter these results by [bold red]A[/bold red]uthor, [bold red]T[/bold red]itle, or [bold red]S[/bold red]ubject? Or press enter to return ")
+    refinement = input("Ok, what should I look for? ")
+    if refinement == "":
+        search_menu()
+    elif refinement_type.lower() == 'a':
+        new_df = result_set[result_set['Authors'].str.lower().str.contains(refinement.lower())]
+        console.clear()
+        display_results_table(new_df, "refined")
+    elif refinement_type.lower() == 't':
+        new_df = result_set[result_set['Title'].str.lower().str.contains(refinement.lower())]
+        console.clear()
+        display_results_table(new_df, "refined")
+    elif refinement_type.lower() == 's':
+        new_df = result_set[result_set['Subjects'].str.lower().str.contains(refinement.lower())]
+        console.clear()
+        display_results_table(new_df, "refined")
+    else:
+        refine_results(result_set)
+
+
 def search_menu():
     console.clear()
     df = check_file_exists()
 
     print("\n\n")
     print("\t([bold red]A[/bold red])uthor Search")
+    print("\t([bold red]S[/bold red])ubject Search")
     print("\t([bold red]T[/bold red])itle Search")
     print("\n")
     print("\t([bold red]U[/bold red])pdate the Project Gutenberg Catalog")
@@ -122,6 +156,8 @@ def search_menu():
         search_for_author(df)
     elif choice.lower() == 't':
         search_for_title(df)
+    elif choice.lower() == 's':
+        search_for_subject(df)
     elif choice.lower() == 'u':
         update_the_catalog()
     elif choice.lower() == 'm':
