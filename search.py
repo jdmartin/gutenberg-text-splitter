@@ -71,7 +71,8 @@ def get_selection_by_id(type_search, list_of_ids, results):
 
 def download_book_by_id(book_id, filename):
     #Sample Format for HTML File: https://www.gutenberg.org/files/1000/1000-h/1000-h.htm
-    url = f'https://www.gutenberg.org/files/{book_id}/{book_id}-h/{book_id}-h.htm'
+    #Sample Format for HTML5 File: https://www.gutenberg.org/cache/epub/68033/pg68033-images.html.utf8
+    url = f'https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-images.html.utf8'
 
     r = requests.get(url, allow_redirects=False)
     if r.status_code == 404:
