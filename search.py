@@ -8,6 +8,9 @@ from rich.console import Console
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from splitter import Editor
+
+editor = Editor()
 console = Console()
 list_of_files = os.listdir('input')
 
@@ -24,7 +27,6 @@ def check_file_exists():
 
     df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
     return df
-
 
 def display_results_table(results, type_search):
     if len(results) == 0:
@@ -59,7 +61,7 @@ def get_name_for_file():
         return choice
 
 def get_selection_by_id(type_search, list_of_ids, results):
-    choice = console.input("Which book would you like? You can also enter [bold red]R[/bold red] to refine the results, or just hit enter to select none of these: ")
+    choice = console.input("\nWhich book would you like? You can also enter [bold red]R[/bold red] to refine the results, or just hit enter to select none of these: ")
     if choice in list_of_ids:
         filename = get_name_for_file()
         if filename == None:
@@ -74,7 +76,6 @@ def get_selection_by_id(type_search, list_of_ids, results):
         print("Sorry, that's not one of the choices.\n")
         get_selection_by_id(type_search, list_of_ids, results)
         
-
 def download_book_by_id(book_id, filename):
     #Sample Format for HTML File: https://www.gutenberg.org/files/1000/1000-h/1000-h.htm
     #Sample Format for HTML5 File: https://www.gutenberg.org/cache/epub/68033/pg68033-images.html.utf8
@@ -82,7 +83,7 @@ def download_book_by_id(book_id, filename):
 
     r = requests.get(url, allow_redirects=False)
     if r.status_code == 404:
-        print("\nSorry, I can't find an HTML version of that text.")
+        print("\n\nSorry, I can't find an HTML version of that text.")
         input("Press enter to continue...\n")
     if r.status_code == 200:
         open(f'input/{filename}.html', 'wb').write(r.content)
@@ -93,13 +94,13 @@ def update_the_catalog():
     print("Starting download...")
     r = requests.get(cat_url, allow_redirects=False)
     if r.status_code == 404:
-        print(f"\nSorry, I can't download that file at this time. Server Responded: {r.status_code}")
+        print(f"\n\nSorry, I can't download that file at this time. Server Responded: {r.status_code}")
         input("Press enter to continue...\n")
     if r.status_code == 200:
         open(f'meta/pg_catalog.csv', 'wb').write(r.content)
 
 def search_for_author(df):
-    author_choice = input("What author would you like to find? Or press enter to go back. ")
+    author_choice = input("\n\tWhat author would you like to find? Or press enter to go back. ")
     if author_choice == "":
         search_menu()
     else:
@@ -108,10 +109,9 @@ def search_for_author(df):
             display_results_table(author_results, "author")
         except:
             search_for_author(df)
-        
 
 def search_for_title(df):
-    title_choice = input("What book would you like to find? Or press enter to go back. ")
+    title_choice = input("\n\tWhat book would you like to find? Or press enter to go back. ")
     if title_choice == "":
         search_menu()
     else:
@@ -122,7 +122,7 @@ def search_for_title(df):
             search_for_title(df)
 
 def search_for_subject(df):
-    subject_choice = input("What subject would you like to find? Or press enter to go back. ")
+    subject_choice = input("\n\tWhat subject would you like to find? Or press enter to go back. ")
     if subject_choice == "":
         search_menu()
     else:
@@ -132,7 +132,7 @@ def search_for_subject(df):
         except:
             search_for_subject(df)
 
-def refine_results(result_set):
+def refine_results(result_set, type_search):
     refinement_type = console.input("Would you like to filter these results by [bold red]A[/bold red]uthor, [bold red]T[/bold red]itle, or [bold red]S[/bold red]ubject? Or press enter to return ")
     refinement = input("Ok, what should I look for? ")
     if refinement == "":
@@ -152,9 +152,8 @@ def refine_results(result_set):
     else:
         refine_results(result_set)
 
-
 def search_menu():
-    #console.clear()
+    console.clear()
     df = check_file_exists()
     print("\n\n\t[underline bold]Search Menu[/underline bold]\n")
 
@@ -164,7 +163,7 @@ def search_menu():
     print("\n")
     print("\t([bold red]U[/bold red])pdate the Project Gutenberg Catalog")
     print("\t([bold red]M[/bold red])ain Menu\n")
-    choice = input("What would you like to do? ")
+    choice = input("\tWhat would you like to do? ")
 
     if choice.lower() == 'a':
         search_for_author(df)
@@ -175,7 +174,7 @@ def search_menu():
     elif choice.lower() == 'u':
         update_the_catalog()
     elif choice.lower() == 'm':
-        return    
+        editor.main
     else:
         search_menu()
 
