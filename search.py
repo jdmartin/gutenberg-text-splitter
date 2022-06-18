@@ -157,12 +157,12 @@ def search_menu():
     df = check_file_exists()
     print("\n\n\t[underline bold]Search Menu[/underline bold]\n")
 
-    print("\t([bold red]A[/bold red])uthor Search")
-    print("\t([bold red]S[/bold red])ubject Search")
-    print("\t([bold red]T[/bold red])itle Search")
+    print("\t[dim]([/dim][bold red]A[/bold red][dim])[/dim]uthor Search")
+    print("\t[dim]([/dim][bold red]S[/bold red][dim])[/dim]ubject Search")
+    print("\t[dim]([/dim][bold red]T[/bold red][dim])[/dim]itle Search")
     print("\n")
-    print("\t([bold red]U[/bold red])pdate the Project Gutenberg Catalog")
-    print("\t([bold red]M[/bold red])ain Menu\n")
+    print("\t[dim]([/dim][bold red]U[/bold red][dim])[/dim]pdate the Project Gutenberg Catalog")
+    print("\t[dim]([/dim][bold red]M[/bold red][dim])[/dim]ain Menu\n")
     choice = input("\tWhat would you like to do? ")
 
     if choice.lower() == 'a':
