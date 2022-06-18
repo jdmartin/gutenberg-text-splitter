@@ -1,3 +1,4 @@
+import inspect
 import os
 
 from bs4 import BeautifulSoup
@@ -183,7 +184,7 @@ class Editor:
                 the_program.location = ""
             elif choice.lower() == 'e!':
                 the_program.selected_element_for_chapters = ""
-            elif choice.lower() == 'h':
+            elif choice.lower() == '?':
                 help_screen()
             elif choice.lower() == 'o!':
                 the_program.starting_pos = 1
@@ -727,7 +728,7 @@ class Editor:
             print("[bold green]O![/bold green]\tClear Current Offset")
             print("[bold green]Y![/bold green]\tClear Publication Year")
             print("\n")
-            print("[bold green]H[/bold green]\tHelp!")
+            print("[bold green]?[/bold green]\tHelp!")
             print("[bold green]Q[/bold green]\tQuit")
             print("\n")
             get_menu_choice()
