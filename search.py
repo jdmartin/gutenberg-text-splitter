@@ -27,6 +27,11 @@ def check_file_exists():
 
 
 def display_results_table(results, type_search):
+    if len(results) == 0:
+        console.clear()
+        input("Sorry, no results. Press enter to return to the search menu.")
+        search_menu()
+        
     list_of_ids = []
     table = Table(title=f"Results", min_width=60, style="purple", show_lines=True)
     table.add_column("ID", style="cyan", no_wrap=True)
@@ -42,7 +47,7 @@ def display_results_table(results, type_search):
     get_selection_by_id(type_search, list_of_ids, results)
 
 def get_name_for_file():
-    choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) \nOr press enter to cancel: ")
+    choice = console.input("\nWhat should I call this file? ([cyan]Note[/cyan]: I just need the name, it will be a .html file by default) \nOr press enter to cancel: ")
     choice = choice.replace('.html', '')
     test_choice = choice + ".html"
     if test_choice == ".html":
@@ -62,12 +67,12 @@ def get_selection_by_id(type_search, list_of_ids, results):
         else:
             download_book_by_id(choice, filename)
     elif choice.lower() == 'r':
-        refine_results(results)
+        refine_results(results, type_search)
     elif choice == "":
         search_menu()
     else:
         print("Sorry, that's not one of the choices.\n")
-        get_selection_by_id(type_search, list_of_ids)
+        get_selection_by_id(type_search, list_of_ids, results)
         
 
 def download_book_by_id(book_id, filename):
@@ -149,10 +154,10 @@ def refine_results(result_set):
 
 
 def search_menu():
-    console.clear()
+    #console.clear()
     df = check_file_exists()
+    print("\n\n\t[underline bold]Search Menu[/underline bold]\n")
 
-    print("\n\n")
     print("\t([bold red]A[/bold red])uthor Search")
     print("\t([bold red]S[/bold red])ubject Search")
     print("\t([bold red]T[/bold red])itle Search")

@@ -1,4 +1,3 @@
-import inspect
 import os
 
 from bs4 import BeautifulSoup
@@ -158,6 +157,7 @@ class Editor:
                 if the_program.chosen_file != "":
                     process_html(the_program.chosen_file, the_program.selected_element_for_chapters, the_program.selected_attrib_for_chapters, the_program.starting_pos, "tei")
             elif choice.lower() == 'f':
+                generate_menu_meta_table()
                 search.search_menu()
             elif choice.lower() == 'p':
                 get_custom_chapter_prefix()
@@ -209,7 +209,7 @@ class Editor:
             if choice == "":
                 pass
             else:
-                the_program.custom_file_prefix = choice
+                the_program.custom_file_prefix = choice.strip()
 
         def get_starting_pos():
             #Count the number of 'element' that happen before the chapters begin, and subtract from 1 to get the right starting place for this counter.
@@ -232,9 +232,9 @@ class Editor:
             if choice == "":
                 pass
             else:
-                the_program.publication_year = choice
+                the_program.publication_year = choice.strip()
 
-        def display_tei_header(title, author, publisher, year, location):
+        def generate_tei_header(title, author, publisher, year, location):
             table = Table(title="TEI Header Info", style="purple", title_style="green")
 
             table.add_column("Title", justify="center", style="red")
@@ -244,13 +244,13 @@ class Editor:
             table.add_column("Location", justify="center", style="green")
             table.add_row(title, author, publisher, year, location)
 
-            console.print(table)
+            return table
         
         def prepare_the_tei_header():
-            the_program.title = input("Title of text? (or press enter to skip): ")
-            the_program.author = input("Author's name? (or press enter to skip): ")
-            the_program.location = input("Location of Publication? (or press enter to skip): ")
-            the_program.publisher = input("Publisher? (or press enter to skip): ")
+            the_program.title = input("Title of text? (or press enter to skip): ").strip()
+            the_program.author = input("Author's name? (or press enter to skip): ").strip()
+            the_program.location = input("Location of Publication? (or press enter to skip): ").strip()
+            the_program.publisher = input("Publisher? (or press enter to skip): ").strip()
             
         def get_element_count_in_chosen_file():
             screen_clear()
@@ -504,12 +504,13 @@ class Editor:
         def show_the_samples(temp_samples):
             screen_clear()
             j = 1
-            table = Table(title="Starting Position and Samples", width=120, show_lines=True)
+            table = Table(title="Starting Position and Samples", show_lines=True, expand=True)
             table.add_column("Starting Pos.", style="cyan", no_wrap=True)
             table.add_column("Sample Text", justify="left", style="magenta")
 
             if len(temp_samples) > 15:
                 for item in temp_samples[:15]:
+                    item = item.strip('\n')
                     table.add_row(str(j), item[0:120].strip())
                     j += 1
             elif len(temp_samples) >= 10:
@@ -524,6 +525,8 @@ class Editor:
             console.print(table)
 
         def generate_menu_meta_table():
+            screen_clear()
+            tei_table = generate_tei_header(the_program.title, the_program.author, the_program.publisher, the_program.publication_year, the_program.location)
             the_file = the_program.chosen_file
             pub_year = the_program.publication_year
             the_element = the_program.selected_element_for_chapters
@@ -551,8 +554,10 @@ class Editor:
                 status = ""
 
             table.add_row(the_file, pub_year, the_element, the_attrib, starting_pos, prefix, status)
-
+            
             console.print(table)
+            if the_program.title != "" or the_program.author != "" or the_program.publisher != "" or the_program.location != "":
+                console.print(tei_table)
 
         #Process the XML and output HTML elements for the body.
         def process_html(the_file, element, attrib, start_pos, type_of_file):
@@ -703,11 +708,8 @@ class Editor:
 
 
         def menu():
-            screen_clear()
             print("\n")
             generate_menu_meta_table()
-            print("\n")
-            display_tei_header(the_program.title, the_program.author, the_program.publisher, the_program.publication_year, the_program.location)
             print("\n")
             print("What would you like to do?:\n")
             print("[bold green]1[/bold green]\tSelect a Working File")
