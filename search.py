@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 from rich import print
 from rich.console import Console
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 console = Console()
@@ -12,16 +13,15 @@ list_of_files = os.listdir('input')
 
 def check_file_exists():
     if not exists('meta/pg_catalog.csv'):
-        choice = input("Looks like we don't have the Project Gutenberg catalog. Would you like to download it now? (y/n) ")
-        if choice.lower() == 'y':
+        choice = Confirm.ask("Looks like we don't have the Project Gutenberg catalog. Would you like to download it now?")
+        if choice == True:
             url = f'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
 
             r = requests.get(url, allow_redirects=False)
             open(f'meta/pg_catalog.csv', 'wb').write(r.content)
-        elif choice.lower() == 'n':
+        elif choice == False:
             return
-        else:
-            check_file_exists()
+
     df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
     return df
 
@@ -42,7 +42,8 @@ def display_results_table(results, type_search):
     get_selection_by_id(type_search, list_of_ids, results)
 
 def get_name_for_file():
-    choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) Or press enter to cancel. ")
+    choice = input("\nWhat should I call this file? (Note: I just need the name, it will be a .html file by default) \nOr press enter to cancel: ")
+    choice = choice.replace('.html', '')
     test_choice = choice + ".html"
     if test_choice == ".html":
         return
@@ -97,27 +98,34 @@ def search_for_author(df):
     if author_choice == "":
         search_menu()
     else:
-        author_results = df.loc[(df['Authors'].str.contains(author_choice, na=False, case=False) & (df['Type']=="Text"))]
-
-        display_results_table(author_results, "author")
+        try:
+            author_results = df.loc[(df['Authors'].str.contains(author_choice, na=False, case=False) & (df['Type']=="Text"))]
+            display_results_table(author_results, "author")
+        except:
+            search_for_author(df)
+        
 
 def search_for_title(df):
     title_choice = input("What book would you like to find? Or press enter to go back. ")
     if title_choice == "":
         search_menu()
     else:
-        title_results = df[(df['Title'].str.contains(title_choice, na=False, case=False) & (df['Type']=="Text"))]
-
-        display_results_table(title_results, "title")
+        try:
+            title_results = df[(df['Title'].str.contains(title_choice, na=False, case=False) & (df['Type']=="Text"))]
+            display_results_table(title_results, "title")
+        except:
+            search_for_title(df)
 
 def search_for_subject(df):
     subject_choice = input("What subject would you like to find? Or press enter to go back. ")
     if subject_choice == "":
         search_menu()
     else:
-        subject_results = df[(df['Subjects'].str.contains(subject_choice, na=False, case=False) & (df['Type']=="Text"))]
-
-        display_results_table(subject_results, "subject")
+        try:
+            subject_results = df[(df['Subjects'].str.contains(subject_choice, na=False, case=False) & (df['Type']=="Text"))]
+            display_results_table(subject_results, "subject")
+        except:
+            search_for_subject(df)
 
 def refine_results(result_set):
     refinement_type = console.input("Would you like to filter these results by [bold red]A[/bold red]uthor, [bold red]T[/bold red]itle, or [bold red]S[/bold red]ubject? Or press enter to return ")
