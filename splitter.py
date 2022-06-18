@@ -61,6 +61,7 @@ class Editor:
         def generate_input_list():
             input_files = {}
             screen_clear()
+            generate_menu_meta_table()
             i = 1
             #Generate List of Texts in input directory for Menu
             directory = 'input'
@@ -79,10 +80,8 @@ class Editor:
             for item,value in input_files.items():
                 table.add_row(str(item), value)
             
-            print("\n")
             console.print(table)
             
-            print("\n")
 
             def get_file_choice(files):
                 #These are the menu choices and the corresponding functions:
