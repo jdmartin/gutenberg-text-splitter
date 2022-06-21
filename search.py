@@ -1,4 +1,7 @@
 import os
+import time
+from datetime import datetime, timedelta
+from os import path
 from os.path import exists
 
 import pandas as pd
@@ -23,9 +26,23 @@ def check_file_exists():
             r = requests.get(url, allow_redirects=False)
             open(f'meta/pg_catalog.csv', 'wb').write(r.content)
         elif choice == False:
-            return
+            pass
+    else:
+        a_week_ago = datetime.now() - timedelta(days=7)
+        filetime = datetime.fromtimestamp(path.getmtime('meta/pg_catalog.csv'))
+    
+        if filetime < a_week_ago:
+            choice = Confirm.ask('Looks like your Project Gutenberg catalog is over a week old. Update now?')
+            if choice == True:
+                url = f'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
 
-    df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
+                r = requests.get(url, allow_redirects=False)
+                open(f'meta/pg_catalog.csv', 'wb').write(r.content)
+                check_file_exists()
+            elif choice == False:
+                pass
+
+    df = pd.read_csv('meta/pg_catalog.csv', low_memory=False, dtype={"Text#": "uint32", "Title": "object", "Authors": "object", "Subjects": "object"})
     return df
 
 def display_results_table(results, type_search):
