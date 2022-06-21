@@ -1,4 +1,5 @@
 import os
+import time
 from os.path import exists
 
 import pandas as pd
@@ -15,6 +16,7 @@ console = Console()
 list_of_files = os.listdir('input')
 
 def check_file_exists():
+    now = time.time()
     if not exists('meta/pg_catalog.csv'):
         choice = Confirm.ask("Looks like we don't have the Project Gutenberg catalog. Would you like to download it now?")
         if choice == True:
@@ -23,9 +25,20 @@ def check_file_exists():
             r = requests.get(url, allow_redirects=False)
             open(f'meta/pg_catalog.csv', 'wb').write(r.content)
         elif choice == False:
-            return
+            pass
+    
+    if os.stat('meta/pg_catalog.csv').st_mtime < now - 7:
+        choice = Confirm.ask('Looks like your Project Gutenberg catalog is over a week old. Update now?')
+        if choice == True:
+            url = f'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
 
-    df = pd.read_csv('meta/pg_catalog.csv', low_memory=False)
+            r = requests.get(url, allow_redirects=False)
+            open(f'meta/pg_catalog.csv', 'wb').write(r.content)
+            check_file_exists()
+        elif choice == False:
+            pass
+
+    df = pd.read_csv('meta/pg_catalog.csv', low_memory=False, dtype={"Text#": "uint32", "Title": "object", "Authors": "object", "Subjects": "object"})
     return df
 
 def display_results_table(results, type_search):
