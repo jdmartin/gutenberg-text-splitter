@@ -167,7 +167,8 @@ def refine_results(result_set, type_search):
         console.clear()
         display_results_table(new_df, "refined")
     else:
-        refine_results(result_set)
+        input("Sorry, no matches... Press enter to return to the previous search.")
+        display_results_table(result_set, "unrefined")
 
 def search_menu():
     console.clear()
@@ -191,7 +192,9 @@ def search_menu():
     elif choice.lower() == 'u':
         update_the_catalog()
     elif choice.lower() == 'm':
-        editor.main
+        return
+    elif choice == "":
+        return
     else:
         search_menu()
 
