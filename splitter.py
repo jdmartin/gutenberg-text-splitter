@@ -311,9 +311,9 @@ class Editor:
 
         def offer_suggestions_about_elements_and_attributes(soup):
             suggested_items = []
-            chapter_search_terms = ["chap", "chapter", "x-ebookmarker-drop"]
+            chapter_search_terms = ["chap", "chapter", "x-ebookmaker", "x-ebookmaker-drop"]
             chapter_search_results = []
-            header_search_terms = ["h2", "h3", "hr"]
+            header_search_terms = ["h2", "h3", "hr", "chap x-ebookmaker", "x-ebookmaker-drop"]
             header_search_results = []
 
             option = 0
