@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime, timedelta
 from os import path
 from os.path import exists
@@ -42,7 +41,7 @@ def check_file_exists():
             elif choice == False:
                 pass
 
-    df = pd.read_csv('meta/pg_catalog.csv', low_memory=False, dtype={"Text#": "uint32", "Title": "object", "Authors": "object", "Subjects": "object"})
+    df = pd.read_csv('meta/pg_catalog.csv', sep=',', engine='c', low_memory=False, na_filter=False, dtype={"Text#": "uint32", "Title": "object", "Authors": "object", "Subjects": "object"})
     return df
 
 def display_results_table(results, type_search):
