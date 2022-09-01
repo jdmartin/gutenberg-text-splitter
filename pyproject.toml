@@ -10,7 +10,7 @@ python = "^3.9"
 beautifulsoup4 = "^4.11.1"
 lxml = "^4.8.0"
 rich = "^12.4.1"
-pandas = "^1.4.2"
+pandas = "^1.4.4"
 requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
