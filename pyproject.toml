@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-beautifulsoup4 = "^4.11.1"
+beautifulsoup4 = "^4.11.2"
 lxml = "^4.8.0"
 rich = "^13.0.0"
 pandas = "^1.4.2"
