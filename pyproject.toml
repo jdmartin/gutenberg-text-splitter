@@ -1,9 +1,5 @@
 [tool.poetry]
-name = "gutenberg-text-splitter"
-version = "0.0.1"
-description = ""
-authors = ["jdmartin <jonsaccount+githubjd@icloud.com>"]
-license = "MIT"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"
