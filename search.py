@@ -22,7 +22,7 @@ def check_file_exists():
         if choice == True:
             url = f'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
 
-            r = requests.get(url, allow_redirects=False)
+            r = requests.get(url, allow_redirects=False, timeout=10)
             open(f'meta/pg_catalog.csv', 'wb').write(r.content)
         elif choice == False:
             pass
@@ -35,7 +35,7 @@ def check_file_exists():
             if choice == True:
                 url = f'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
 
-                r = requests.get(url, allow_redirects=False)
+                r = requests.get(url, allow_redirects=False, timeout=10)
                 open(f'meta/pg_catalog.csv', 'wb').write(r.content)
                 check_file_exists()
             elif choice == False:
@@ -97,7 +97,7 @@ def download_book_by_id(book_id, filename):
     #Sample Format for HTML5 File: https://www.gutenberg.org/cache/epub/68033/pg68033-images.html.utf8
     url = f'https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-images.html.utf8'
 
-    r = requests.get(url, allow_redirects=False)
+    r = requests.get(url, allow_redirects=False, timeout=10)
     if r.status_code == 404:
         print("\n\nSorry, I can't find an HTML version of that text.")
         input("Press enter to continue...\n")
@@ -108,7 +108,7 @@ def update_the_catalog():
     cat_url = 'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
     
     print("Starting download...")
-    r = requests.get(cat_url, allow_redirects=False)
+    r = requests.get(cat_url, allow_redirects=False, timeout=10)
     if r.status_code == 404:
         print(f"\n\nSorry, I can't download that file at this time. Server Responded: {r.status_code}")
         input("Press enter to continue...\n")
