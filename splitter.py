@@ -2,11 +2,11 @@
 
 import os
 
+from rich.syntax import Syntax
 from bs4 import BeautifulSoup
 from rich import print
 from rich.console import Console
 from rich.prompt import Prompt
-from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
@@ -46,7 +46,7 @@ class Editor:
                                         (e.g. <div class="chapter"> and not <div id="the_nothing">.)
                     
                     [red]Current Offset[/red]: From Menu Option 3, this is the number of your chosen element that should be skipped before writing chapters.
-                                        Why? Because sometimes encoders use the same elements for unrelated, extra-textual matters. 
+                                        
 
                     N.B. (Exploring the source pipes the file to less. Use /pattern to highlight pattern ahead, or [bold magenta]?pattern[/bold magenta] for behind.)                   
                     
