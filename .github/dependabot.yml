@@ -14,3 +14,7 @@ updates:
     directory: "/" # location of your pyproject.toml and poetry.lock
     schedule:
       interval: "weekly"
+  - package-ecosystem: "github-actions" #See: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/keeping-your-actions-up-to-date-with-dependabot
+    directory: "/"
+    schedule:
+      interval: "weekly"
