@@ -1,0 +1,272 @@
+# shelley-lovelace.yaml
+#
+# Corpus Part 2: Shelley-Lovelace subject texts for Sextant pipeline.
+#
+# Usage:
+#   poetry run python batch-splitter.py --config shelley-lovelace.yaml
+#
+# All texts verified with --analyze mode. Gutenberg IDs noted for provenance.
+# Naming convention: {year}-{corpus_id}--{Surname_Firstname}-{div_type}_{n}
+#
+# Manual prep required (not in this config):
+#   - Lovelace Notes A-G (Wikisource)
+#   - Menabrea French original (ARTFL/Gallica)
+#   - Somerville, On the Connexion of the Physical Sciences (Internet Archive)
+#   - Babbage, Ninth Bridgewater Treatise (Internet Archive)
+#   - Genre-matched negative control TBD
+
+corpus_name: shelley-lovelace
+output_format: tei
+output_dir: output
+
+texts:
+
+  # ──────────────────────────────────────────────────────────────────
+  # MILTON -- creature's reading; known positive control
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/paradise_lost.html          # PG #20
+    elem: div
+    attr: chapter
+    offset: 1
+    year: "1667"
+    prefix: "1667-ENG16670--Milton_John"
+    tei:
+      title: "Paradise Lost"
+      author: "Milton, John (1608-1674)"
+      publisher: "Samuel Simmons"
+      location: "London"
+      div_type: book
+    # 10 books. 1667 ten-book edition.
+
+  # ──────────────────────────────────────────────────────────────────
+  # VOLNEY -- creature's reading (The Ruins)
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/volney_ruins.html           # PG #1397
+    elem: h2
+    offset: 11
+    limit: 24
+    year: "1791"
+    prefix: "1791-FRA17910--Volney"
+    tei:
+      title: "The Ruins; Or, Meditation on the Revolutions of Empires"
+      author: "Volney, Constantin-François (1757-1820)"
+      publisher: "Joseph Johnson"
+      location: "London"
+      div_type: chapter
+    # 24 chapters. Skips Law of Nature appendix and Priestly polemic.
+
+  # ──────────────────────────────────────────────────────────────────
+  # WOLLSTONECRAFT -- matrilineal transmission chain
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/wollstonecraft_vindication.html  # PG #3420
+    elem: h4
+    offset: 6
+    limit: 13
+    year: "1792"
+    prefix: "1792-ENG17920--Wollstonecraft_Mary"
+    tei:
+      title: "A Vindication of the Rights of Woman"
+      author: "Wollstonecraft, Mary (1759-1797)"
+      publisher: "Joseph Johnson"
+      location: "London"
+      div_type: chapter
+    # 13 chapters. Skips biographical sketch and introductions.
+
+  - file: input/wollstonecraft_maria.html   # PG #134
+    elem: div
+    attr: chapter
+    offset: 5
+    limit: 19
+    year: "1798"
+    prefix: "1798-ENG17980--Wollstonecraft_Mary"
+    tei:
+      title: "Maria; Or, The Wrongs of Woman"
+      author: "Wollstonecraft, Mary (1759-1797)"
+      publisher: "Joseph Johnson"
+      location: "London"
+      div_type: chapter
+    # 19 sections (Ch 1-14, Appendix, Ch 15-17, Conclusion).
+    # Unfinished novel; Godwin's editorial conclusion included as received text.
+
+  # ──────────────────────────────────────────────────────────────────
+  # GODWIN -- Mary Shelley's father; Frankenstein precursor
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/caleb_williams.html         # PG #11323
+    elem: h2
+    offset: 10
+    limit: 44
+    year: "1794"
+    prefix: "1794-ENG17940--Godwin_William"
+    tei:
+      title: "Caleb Williams; Or, Things as They Are"
+      author: "Godwin, William (1756-1836)"
+      publisher: "B. Crosby"
+      location: "London"
+      div_type: chapter
+    # 44 sections (3 vols, 41 chapters + Postscript + 2 empty volume headers).
+    # Volume headers produce near-empty files; Sextant will skip.
+
+  # ──────────────────────────────────────────────────────────────────
+  # MARY SHELLEY -- primary subject author
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/frankenstein_1818.html      # PG #41445
+    elem: div
+    attr: chapter
+    offset: 3
+    year: "1818"
+    boundary_mode: sibling
+    prefix: "1818-ENG18180--Shelley_Mary"
+    tei:
+      title: "Frankenstein; Or, The Modern Prometheus"
+      author: "Shelley, Mary Wollstonecraft (1797-1851)"
+      publisher: "Lackington, Hughes, Harding, Mavor and Jones"
+      location: "London"
+      div_type: chapter
+    # 30 chapters. 1818 first edition. Thin wrapper divs require sibling mode.
+    # Includes 3 empty volume divs.
+
+  - file: input/mathilda.html               # PG #15238
+    elem: div
+    attr: chapter
+    offset: 4
+    limit: 12
+    year: "1820"
+    prefix: "1820-ENG18200--Shelley_Mary"
+    tei:
+      title: "Mathilda"
+      author: "Shelley, Mary Wollstonecraft (1797-1851)"
+      publisher: "University of North Carolina Press"
+      location: "Chapel Hill"
+      div_type: chapter
+    # 12 chapters. Skips Nitchie editorial preface/introduction,
+    # Fields of Fancy draft, and Author's Footnotes apparatus.
+
+  - file: input/lastman.html                # PG #18247
+    elem: div
+    attr: chapter
+    offset: 3
+    year: "1826"
+    prefix: "1826-ENG18260--Shelley_Mary"
+    tei:
+      title: "The Last Man"
+      author: "Shelley, Mary Wollstonecraft (1797-1851)"
+      publisher: "Henry Colburn"
+      location: "London"
+      div_type: chapter
+    # 33 chapters (Introduction + 30 chapters across 3 vols + 2 volume headers).
+    # Duplicate "CHAPTER IV" in Vol I is original text, not a bug.
+
+  - file: input/frankenstein_1831.html      # PG #42324
+    elem: h2
+    offset: 6
+    year: "1831"
+    prefix: "1831-ENG18310--Shelley_Mary"
+    tei:
+      title: "Frankenstein; Or, The Modern Prometheus"
+      author: "Shelley, Mary Wollstonecraft (1797-1851)"
+      publisher: "Henry Colburn and Richard Bentley"
+      location: "London"
+      div_type: chapter
+    # 28 chapters. 1831 revised edition. h2 boundary markers.
+
+  - file: input/shelley_mary_notes.html     # PG #4695
+    elem: h3
+    offset: 6
+    year: "1839"
+    prefix: "1839-ENG18390--Shelley_Mary"
+    tei:
+      title: "Notes to the Complete Poetical Works of Percy Bysshe Shelley"
+      author: "Shelley, Mary Wollstonecraft (1797-1851)"
+      publisher: "Edward Moxon"
+      location: "London"
+      div_type: section
+    # 19 notes. Mary writing analytical/editorial prose about Percy's poems.
+    # Different register from her novels; useful comparator for Lovelace's Notes.
+
+  # ──────────────────────────────────────────────────────────────────
+  # BABBAGE -- Lovelace's collaborator
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/babbage_economy.html        # PG #4238
+    elem: h3
+    offset: 1
+    year: "1832"
+    prefix: "1832-ENG18320--Babbage_Charles"
+    tei:
+      title: "On the Economy of Machinery and Manufactures"
+      author: "Babbage, Charles (1791-1871)"
+      publisher: "Charles Knight"
+      location: "London"
+      div_type: chapter
+    # 35 chapters.
+
+  - file: input/babbage_passages.html       # PG #57532
+    elem: h2
+    offset: 4
+    limit: 36
+    year: "1864"
+    prefix: "1864-ENG18640--Babbage_Charles"
+    tei:
+      title: "Passages from the Life of a Philosopher"
+      author: "Babbage, Charles (1791-1871)"
+      publisher: "Longman, Green, Longman, Roberts, and Green"
+      location: "London"
+      div_type: chapter
+    # 36 chapters. Skips Appendix and List of Printed Papers.
+
+  # ──────────────────────────────────────────────────────────────────
+  # PERCY SHELLEY -- stylistic control (prose essays)
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/shelley_defence.html        # PG #5428
+    elem: h2
+    offset: 2
+    year: "1840"
+    prefix: "1840-ENG18400--Shelley_Percy"
+    tei:
+      title: "Essays, Letters from Abroad, Translations and Fragments"
+      author: "Shelley, Percy Bysshe (1792-1822)"
+      publisher: "Edward Moxon"
+      location: "London"
+      div_type: section
+    # 10 essays. Published posthumously by Mary in 1840.
+    # Lovelace's Notes were 1843; she could have read this volume.
+    # If Sextant detects Percy-Lovelace signal, that's a confound.
+
+  # ──────────────────────────────────────────────────────────────────
+  # POE -- intriguing Frankenstein connection found during research
+  # ──────────────────────────────────────────────────────────────────
+
+  - file: input/poe_works_v1.html           # PG #2147
+    elem: div
+    attr: chapter
+    offset: 4
+    year: "1845"
+    prefix: "1845-USA18450--Poe_Edgar"
+    tei:
+      title: "The Works of Edgar Allan Poe, Vol. 1"
+      author: "Poe, Edgar Allan (1809-1849)"
+      publisher: "A. C. Armstrong and Son"
+      location: "New York"
+      div_type: chapter
+    # 8 stories. Skips 3 biographical introductions (not by Poe).
+
+  - file: input/poe_works_v2.html           # PG #2148
+    elem: div
+    attr: chapter
+    offset: 1
+    limit: 22
+    year: "1845"
+    prefix: "1845-USA18452--Poe_Edgar"
+    tei:
+      title: "The Works of Edgar Allan Poe, Vol. 2"
+      author: "Poe, Edgar Allan (1809-1849)"
+      publisher: "A. C. Armstrong and Son"
+      location: "New York"
+      div_type: chapter
+    # 22 stories. Skips editorial notes at end.
