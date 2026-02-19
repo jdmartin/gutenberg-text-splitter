@@ -554,7 +554,7 @@ def analyze_file(filepath):
             mode = "container" if avg_len >= 100 else "sibling"
             suggestions.append({
                 "elem": "div", "attr": cls, "count": count,
-                "sample": [d.get_text()[:60].strip() for d in sample_divs],
+                "elems": sample_divs,
                 "mode": mode, "avg_len": int(avg_len),
             })
 
@@ -564,7 +564,7 @@ def analyze_file(filepath):
         if 3 <= len(elems) <= 200:
             suggestions.append({
                 "elem": tag, "attr": "", "count": len(elems),
-                "sample": [e.get_text()[:60].strip() for e in elems],
+                "elems": elems,
                 "mode": "sibling", "avg_len": 0,
             })
 
@@ -573,16 +573,25 @@ def analyze_file(filepath):
     if 3 <= len(hrs) <= 200:
         suggestions.append({
             "elem": "hr", "attr": "", "count": len(hrs),
-            "sample": ["(horizontal rule)"] * len(hrs),
+            "elems": hrs,
             "mode": "sibling", "avg_len": 0,
         })
 
-    # Sort suggestions: prefer options with chapter-like counts (10-50),
-    # then by count descending
+    # Sort suggestions: prefer semantic elements (div with class, headings)
+    # over hr, and prefer chapter-like counts (5-100) over outliers
     def score(s):
         c = s["count"]
         in_range = 1 if 5 <= c <= 100 else 0
-        return (in_range, c)
+        # Prefer divs with class attrs (most semantic), then headings, then hr
+        if s["elem"] == "div" and s["attr"]:
+            elem_score = 3
+        elif s["elem"] in ("h1", "h2", "h3", "h4"):
+            elem_score = 2
+        elif s["elem"] == "hr":
+            elem_score = 0
+        else:
+            elem_score = 1
+        return (in_range, elem_score, c)
     suggestions.sort(key=score, reverse=True)
 
     if not suggestions:
@@ -598,20 +607,78 @@ def analyze_file(filepath):
         console.print(f"[bold cyan]Option {i}:[/bold cyan] elem={s['elem']}{attr_str}  "
                        f"({s['count']} matches){mode_note}")
 
+        elems = s["elems"]
+
+        # Cap hr display at 5 since they carry no text
+        if s["elem"] == "hr":
+            console.print(f"  [dim]{s['count']} horizontal rules (use as section boundaries)[/dim]")
+            console.print()
+            continue
+
         sample_table = Table(show_header=True, show_lines=False, padding=(0, 2))
         sample_table.add_column("Pos", justify="right", style="dim")
         sample_table.add_column("Sample text")
-        for j, text in enumerate(s["sample"], 1):
-            sample_table.add_row(str(j), text if text else "[dim](empty)[/dim]")
+        sample_table.add_column("Size", justify="right")
+
+        for j, elem in enumerate(elems, 1):
+            text = elem.get_text()[:60].strip()
+
+            # For container divs, show the content length of the div
+            if s["mode"] == "container":
+                char_count = len(elem.get_text(strip=True))
+            else:
+                # For sibling mode (headings, thin divs), show the size
+                # of content between this element and the next one
+                char_count = 0
+                for sib in elem.next_siblings:
+                    if sib.name == s["elem"]:
+                        break
+                    if hasattr(sib, 'get_text'):
+                        char_count += len(sib.get_text(strip=True))
+                    elif isinstance(sib, str):
+                        char_count += len(sib.strip())
+
+            if char_count < 50:
+                size_str = f"[yellow]{char_count}[/yellow]"
+            elif char_count < 500:
+                size_str = f"[dim]{char_count}[/dim]"
+            else:
+                size_str = str(char_count)
+
+            if not text:
+                text = "[dim](empty)[/dim]"
+            sample_table.add_row(str(j), text, size_str)
+
         console.print(sample_table)
         console.print()
 
-    # Suggest the most likely option
+    # Suggest the best option: prefer heading/div options with chapter-like
+    # counts over hr, and suggest the offset that skips thin leading elements
     best = suggestions[0]
     attr_flag = f' --attr {best["attr"]}' if best["attr"] else ""
+
+    # Auto-detect offset: skip leading elements with < 1000 chars
+    # (skips TOC, volume headers, thin front matter)
+    offset = 1
+    for j, elem in enumerate(best["elems"]):
+        if best["mode"] == "container":
+            char_count = len(elem.get_text(strip=True))
+        else:
+            char_count = 0
+            for sib in elem.next_siblings:
+                if sib.name == best["elem"]:
+                    break
+                if hasattr(sib, 'get_text'):
+                    char_count += len(sib.get_text(strip=True))
+                elif isinstance(sib, str):
+                    char_count += len(sib.strip())
+        if char_count >= 1000:
+            offset = j + 1
+            break
+
     console.print("[bold]Suggested command:[/bold]")
     console.print(f"  python batch-splitter.py --file {filepath} "
-                  f"--elem {best['elem']}{attr_flag} --offset 1 --tei")
+                  f"--elem {best['elem']}{attr_flag} --offset {offset} --tei")
     console.print()
 
 
