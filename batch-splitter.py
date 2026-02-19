@@ -510,6 +510,112 @@ def load_corpus_config(config_path):
 
 
 # ---------------------------------------------------------------------------
+# Analyze mode
+# ---------------------------------------------------------------------------
+
+def analyze_file(filepath):
+    """Scan an HTML file and suggest splitting options."""
+    if not os.path.isfile(filepath):
+        console.print(f"[red]Error:[/red] File not found: {filepath}")
+        return
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
+
+    basename = os.path.basename(filepath)
+    console.print(f"\n[bold]Analyzing:[/bold] {basename}\n")
+
+    # Count all elements
+    all_tags = {}
+    for tag in soup.find_all(True):
+        all_tags[tag.name] = all_tags.get(tag.name, 0) + 1
+
+    # Show element counts
+    elem_table = Table(title="Element counts", show_lines=False)
+    elem_table.add_column("Count", justify="right")
+    elem_table.add_column("Element")
+    for tag, count in sorted(all_tags.items(), key=lambda x: -x[1])[:15]:
+        elem_table.add_row(str(count), tag)
+    console.print(elem_table)
+
+    # Find chapter-like patterns
+    suggestions = []
+
+    # Check divs with class attributes
+    divs = soup.find_all("div")
+    div_classes = {}
+    for d in divs:
+        for cls in d.get("class", []):
+            div_classes[cls] = div_classes.get(cls, 0) + 1
+    for cls, count in sorted(div_classes.items(), key=lambda x: -x[1]):
+        if count >= 3:
+            sample_divs = soup.find_all("div", cls)
+            avg_len = sum(len(d.get_text(strip=True)) for d in sample_divs[:5]) / min(len(sample_divs), 5)
+            mode = "container" if avg_len >= 100 else "sibling"
+            suggestions.append({
+                "elem": "div", "attr": cls, "count": count,
+                "sample": [d.get_text()[:60].strip() for d in sample_divs],
+                "mode": mode, "avg_len": int(avg_len),
+            })
+
+    # Check heading elements
+    for tag in ["h1", "h2", "h3", "h4"]:
+        elems = soup.find_all(tag)
+        if 3 <= len(elems) <= 200:
+            suggestions.append({
+                "elem": tag, "attr": "", "count": len(elems),
+                "sample": [e.get_text()[:60].strip() for e in elems],
+                "mode": "sibling", "avg_len": 0,
+            })
+
+    # Check hr elements
+    hrs = soup.find_all("hr")
+    if 3 <= len(hrs) <= 200:
+        suggestions.append({
+            "elem": "hr", "attr": "", "count": len(hrs),
+            "sample": ["(horizontal rule)"] * len(hrs),
+            "mode": "sibling", "avg_len": 0,
+        })
+
+    # Sort suggestions: prefer options with chapter-like counts (10-50),
+    # then by count descending
+    def score(s):
+        c = s["count"]
+        in_range = 1 if 5 <= c <= 100 else 0
+        return (in_range, c)
+    suggestions.sort(key=score, reverse=True)
+
+    if not suggestions:
+        console.print("\n[yellow]No obvious chapter patterns found.[/yellow] "
+                      "Try the interactive splitter (splitter.py) for manual exploration.")
+        return
+
+    # Display suggestions with samples
+    console.print()
+    for i, s in enumerate(suggestions, 1):
+        attr_str = f' attr="{s["attr"]}"' if s["attr"] else ""
+        mode_note = f" [dim](detected: {s['mode']} mode, avg {s['avg_len']} chars)[/dim]" if s["elem"] == "div" else ""
+        console.print(f"[bold cyan]Option {i}:[/bold cyan] elem={s['elem']}{attr_str}  "
+                       f"({s['count']} matches){mode_note}")
+
+        sample_table = Table(show_header=True, show_lines=False, padding=(0, 2))
+        sample_table.add_column("Pos", justify="right", style="dim")
+        sample_table.add_column("Sample text")
+        for j, text in enumerate(s["sample"], 1):
+            sample_table.add_row(str(j), text if text else "[dim](empty)[/dim]")
+        console.print(sample_table)
+        console.print()
+
+    # Suggest the most likely option
+    best = suggestions[0]
+    attr_flag = f' --attr {best["attr"]}' if best["attr"] else ""
+    console.print("[bold]Suggested command:[/bold]")
+    console.print(f"  python batch-splitter.py --file {filepath} "
+                  f"--elem {best['elem']}{attr_flag} --offset 1 --tei")
+    console.print()
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -535,6 +641,10 @@ def build_parser():
     mode.add_argument(
         "--download", metavar="ID", type=int,
         help="Download a Gutenberg text by ID into input/.",
+    )
+    mode.add_argument(
+        "--analyze", metavar="HTML",
+        help="Analyze an HTML file and suggest splitting options.",
     )
 
     # Search options
@@ -607,6 +717,10 @@ def main():
     elif args.download:
         # ---- Download mode ----
         download_gutenberg(args.download, filename=args.save_as)
+
+    elif args.analyze:
+        # ---- Analyze mode ----
+        analyze_file(args.analyze)
 
     elif args.config:
         # ---- Corpus mode ----
