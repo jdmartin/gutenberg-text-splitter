@@ -28,6 +28,8 @@ from rich import print
 from rich.console import Console
 from rich.table import Table
 
+import re
+
 console = Console()
 
 # ---------------------------------------------------------------------------
@@ -710,7 +712,6 @@ def analyze_file(filepath):
     # Auto-detect offset: look for the first element whose heading text
     # matches a chapter/letter pattern. Fall back to first element with
     # >= 1000 chars of content.
-    import re
     chapter_pattern = re.compile(
         r'^\s*(chapter|chap\.?|letter|book|part|canto|section|act|scene)\s',
         re.IGNORECASE
@@ -881,10 +882,13 @@ def main():
             ok = process_file(cfg)
             if ok:
                 success += 1
-                file_stem = os.path.splitext(os.path.basename(cfg["file"]))[0]
-                year_str = str(cfg.get("year", ""))
-                dir_name = f"{year_str}-{file_stem}" if year_str else file_stem
-                out = os.path.join(cfg.get("output_dir", "output"), dir_name)
+                if cfg.get("prefix"):
+                    out = os.path.join(cfg.get("output_dir", "output"), cfg["prefix"])
+                else:
+                    file_stem = os.path.splitext(os.path.basename(cfg["file"]))[0]
+                    year_str = str(cfg.get("year", ""))
+                    dir_name = f"{year_str}-{file_stem}" if year_str else file_stem
+                    out = os.path.join(cfg.get("output_dir", "output"), dir_name)
                 results.add_row(cfg["file"], "[green]OK[/green]", out)
             else:
                 results.add_row(cfg["file"], "[red]FAILED[/red]", "")
