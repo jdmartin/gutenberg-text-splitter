@@ -554,15 +554,47 @@ def analyze_file(filepath):
         for cls in d.get("class", []):
             div_classes[cls] = div_classes.get(cls, 0) + 1
 
-    # Skip div classes that are obviously not chapter boundaries
-    skip_classes = {
-        "footnote", "endnote", "footnotes", "endnotes", "note", "notes",
-        "toc", "contents", "bibliography", "index", "colophon",
-        "poem", "stanza", "verse", "epigraph", "dedication",
-        "sidebar", "nav", "navbar", "header", "footer",
-    }
+    def is_structural_class(cls):
+        """Heuristic: structural classes use readable words like 'chapter',
+        while Gutenberg formatting classes use short CSS abbreviations
+        like 'fsz6', 'dpp01', 'dctr01', 'padtopa', etc."""
+        cl = cls.lower()
+        # Explicit skip list: non-chapter content and known formatting classes
+        skip_classes = {
+            # Content types that aren't chapters
+            "footnote", "endnote", "footnotes", "endnotes", "note", "notes",
+            "toc", "contents", "bibliography", "index", "colophon",
+            "poem", "stanza", "verse", "epigraph", "dedication",
+            "sidebar", "nav", "navbar", "header", "footer",
+            # Common Gutenberg/CSS presentation classes
+            "clearfix", "nowrap", "pright", "padtopa", "tafmono",
+            "dtablebox", "dpoemctr", "dstanzactr", "dquoteverse",
+            "dsdnote", "figcenter", "figright", "figleft",
+            "blockquot", "smcap", "dsynopsis", "dblockquote",
+            "dkeeptgth", "dcenter", "dletter", "dsalute",
+            "dsignature", "daddress",
+        }
+        if cl in skip_classes:
+            return False
+        # Likely structural: contains words like chapter, section, part, book
+        structural_words = {"chapter", "section", "part", "book", "act",
+                           "scene", "canto", "letter", "volume", "div"}
+        if cl in structural_words or any(w in cl for w in structural_words):
+            return True
+        # Likely formatting: very short, has digits, or looks like CSS shorthand
+        if len(cl) <= 5:
+            return False
+        if any(c.isdigit() for c in cl):
+            return False
+        # Gutenberg uses d-prefixed classes for display formatting
+        # (dsdnote, dtablebox, dsynopsis, dblockquote, dkeeptgth, etc.)
+        if cl.startswith("d") and cl[1:].isalpha():
+            return False
+        # Ambiguous: allow if it looks like a real word (all alpha, 6+ chars)
+        return cl.isalpha() and len(cl) >= 6
+
     for cls, count in sorted(div_classes.items(), key=lambda x: -x[1]):
-        if count >= 3 and cls.lower() not in skip_classes:
+        if count >= 3 and is_structural_class(cls):
             sample_divs = soup.find_all("div", cls)
             avg_len = sum(len(d.get_text(strip=True)) for d in sample_divs[:5]) / min(len(sample_divs), 5)
             mode = "container" if avg_len >= 100 else "sibling"
@@ -615,7 +647,11 @@ def analyze_file(filepath):
 
     # Display suggestions with samples
     console.print()
-    for i, s in enumerate(suggestions, 1):
+    # Show top 5 options (more are noise)
+    display_limit = min(5, len(suggestions))
+    if len(suggestions) > display_limit:
+        console.print(f"[dim]Showing top {display_limit} of {len(suggestions)} options[/dim]")
+    for i, s in enumerate(suggestions[:display_limit], 1):
         attr_str = f' attr="{s["attr"]}"' if s["attr"] else ""
         mode_note = f" [dim](detected: {s['mode']} mode, avg {s['avg_len']} chars)[/dim]" if s["elem"] == "div" else ""
         console.print(f"[bold cyan]Option {i}:[/bold cyan] elem={s['elem']}{attr_str}  "
