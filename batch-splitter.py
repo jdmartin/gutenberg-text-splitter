@@ -267,7 +267,9 @@ def process_file(cfg):
 
     # Build output directory name
     file_stem = os.path.splitext(os.path.basename(the_file))[0]
-    if year:
+    if prefix:
+        dir_name = prefix
+    elif year:
         dir_name = f"{year}-{file_stem}"
     else:
         dir_name = file_stem
@@ -429,13 +431,23 @@ def _write_chapter(
     out_path, prefix, is_tei, div_type, n,
     content, title, author, publisher, location, year,
 ):
-    """Write a single chapter/section file."""
+    """Write a single chapter/section file.
+
+    If prefix is set, filenames are: {prefix}-{div_type}_{n}
+    Otherwise, TEI files are: tei_{div_type}_{n}
+    and plain files are: {div_type}_{n}
+    """
+    if prefix:
+        filename = f"{prefix}-{div_type}_{n}"
+    elif is_tei:
+        filename = f"tei_{div_type}_{n}"
+    else:
+        filename = f"{div_type}_{n}"
+
     if is_tei:
-        filename = f"{prefix}tei_{div_type}_{n}"
         tei_head = make_tei_head(title, author, publisher, location, year, div_type, n)
         write_section(os.path.join(out_path, filename), content, tei_head)
     else:
-        filename = f"{prefix}{div_type}_{n}"
         write_section(os.path.join(out_path, filename), content)
 
 
@@ -546,7 +558,10 @@ def build_parser():
     single.add_argument("--offset", type=int, default=1, help="Number of leading elements to skip (default: 1).")
     single.add_argument("--year", default="", help="Publication year.")
     single.add_argument("--tei", action="store_true", help="Output TEI XML instead of plain text.")
-    single.add_argument("--prefix", default="", help="Filename prefix for output files.")
+    single.add_argument("--prefix", default="",
+                          help="Filename prefix. If set, files are named {prefix}-chapter_1 etc. "
+                               "Example: --prefix '1818-ENG18180--Shelley' produces "
+                               "1818-ENG18180--Shelley-chapter_1.")
     single.add_argument("--output-dir", default="output", help="Base output directory (default: output).")
 
     # TEI metadata

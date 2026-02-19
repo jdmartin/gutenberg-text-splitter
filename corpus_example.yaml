@@ -29,6 +29,11 @@
 #     wrappers. "container" forces content-inside-element mode. "sibling"
 #     forces content-between-markers mode (for HTML like
 #     <div class="chapter"><h3>CH I</h3></div><p>text...</p>).
+#   - prefix: Controls output folder and file naming. If set, the output
+#     folder is named {prefix}/ and files are {prefix}-chapter_1 etc.
+#     Useful for matching downstream pipeline naming conventions.
+#     Example: prefix: "1818-ENG18180--Shelley" produces folder
+#     1818-ENG18180--Shelley/ with files 1818-ENG18180--Shelley-chapter_1.
 
 corpus_name: example-corpus
 output_format: tei   # "tei" or "plain"
