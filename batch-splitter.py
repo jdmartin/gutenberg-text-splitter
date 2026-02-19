@@ -157,6 +157,10 @@ def download_gutenberg(book_id, filename=None):
     """
     Download a Gutenberg HTML text by ID into input/.
 
+    Tries two URL formats:
+      1. New HTML5: /cache/epub/{id}/pg{id}-images.html.utf8
+      2. Legacy:    /files/{id}/{id}-h/{id}-h.htm
+
     Returns the path to the downloaded file, or None on failure.
     """
     import requests
@@ -171,23 +175,29 @@ def download_gutenberg(book_id, filename=None):
         console.print(f"  [dim]Already exists:[/dim] {out_path}")
         return out_path
 
-    url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-images.html.utf8"
-    console.print(f"  Downloading PG #{book_id} -> {out_path}...")
+    urls = [
+        f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-images.html.utf8",
+        f"https://www.gutenberg.org/files/{book_id}/{book_id}-h/{book_id}-h.htm",
+        f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.html.utf8",
+        f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-images.html",
+    ]
 
-    try:
-        r = requests.get(url, allow_redirects=False, timeout=30)
-        if r.status_code == 200:
-            os.makedirs("input", exist_ok=True)
-            with open(out_path, "wb") as f:
-                f.write(r.content)
-            console.print(f"  [green]Downloaded:[/green] {out_path} ({len(r.content) // 1024} KB)")
-            return out_path
-        else:
-            console.print(f"  [red]HTTP {r.status_code}[/red] -- no HTML version available for PG #{book_id}")
-            return None
-    except Exception as e:
-        console.print(f"  [red]Download failed:[/red] {e}")
-        return None
+    os.makedirs("input", exist_ok=True)
+
+    for url in urls:
+        console.print(f"  Trying {url}...")
+        try:
+            r = requests.get(url, timeout=30)
+            if r.status_code == 200:
+                with open(out_path, "wb") as f:
+                    f.write(r.content)
+                console.print(f"  [green]Downloaded:[/green] {out_path} ({len(r.content) // 1024} KB)")
+                return out_path
+        except Exception as e:
+            console.print(f"  [dim]Failed: {e}[/dim]")
+
+    console.print(f"  [red]Could not download PG #{book_id} -- no HTML version found.[/red]")
+    return None
 
 # ---------------------------------------------------------------------------
 # Core splitting logic (extracted from splitter.py's process_html)
