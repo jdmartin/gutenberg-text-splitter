@@ -1,0 +1,76 @@
+# corpus_example.yaml
+#
+# Example corpus config for batch-splitter.py.
+#
+# Usage:
+#   python3 batch-splitter.py --config corpus_example.yaml
+#
+# Before running:
+#   1. Use the interactive splitter (python3 splitter.py) to explore each text
+#      and determine the correct elem/attr/offset values.
+#   2. Download texts into input/ using the built-in search (menu option F)
+#      or save HTML from other sources (e.g. Wikisource).
+#   3. Record the elem/attr/offset values you found below.
+#
+# Notes:
+#   - elem/attr: The HTML element and optional class/id that marks chapter
+#     boundaries. For container elements like <div class="chapter">, use
+#     elem: div and attr: chapter. For heading elements like <h2>, just
+#     use elem: h2 with no attr.
+#   - offset: Number of matched elements to skip before writing output.
+#     Use 1 unless front matter elements match your elem/attr pattern.
+#   - end_marker: Text that signals end of book content. Defaults to
+#     "PROJECT GUTENBERG EBOOK". Set to "" for non-Gutenberg sources.
+#   - div_type: TEI <div> type attribute. Use "chapter" for novels,
+#     "note" for annotations, "poem" for verse, "letter" for epistolary
+#     sections, "section" as a generic fallback.
+#   - boundary_mode: How chapter text is extracted. "auto" (default) detects
+#     whether matched elements contain full chapter text or are thin heading
+#     wrappers. "container" forces content-inside-element mode. "sibling"
+#     forces content-between-markers mode (for HTML like
+#     <div class="chapter"><h3>CH I</h3></div><p>text...</p>).
+
+corpus_name: example-corpus
+output_format: tei   # "tei" or "plain"
+output_dir: output
+
+texts:
+  # Frankenstein -- tested and verified. 28 sections (4 letters + 24 chapters).
+  # PG #84 uses <div class="chapter"> as the container element.
+  - file: input/frankenstein.html
+    elem: div
+    attr: chapter
+    offset: 1
+    year: "1818"
+    tei:
+      title: "Frankenstein; Or, The Modern Prometheus"
+      author: "Mary Wollstonecraft Shelley"
+      publisher: "Lackington, Hughes, Harding, Mavor and Jones"
+      location: "London"
+      div_type: chapter
+
+  # Volney's Ruins -- uses <h2> for chapter headings (no div containers).
+  # Run the interactive splitter first to confirm offset.
+  # - file: input/onruins.html
+  #   elem: h2
+  #   offset: 5         # Skip prefaces; adjust after checking
+  #   year: "1791"
+  #   tei:
+  #     title: "The Ruins; Or, A Survey of the Revolutions of Empires"
+  #     author: "C. F. Volney"
+  #     publisher: ""
+  #     location: "Paris"
+  #     div_type: chapter
+
+  # Wikisource example (non-Gutenberg):
+  # - file: input/lovelace_notes.html
+  #   elem: h2
+  #   offset: 1
+  #   year: "1843"
+  #   end_marker: ""    # No Gutenberg footer to detect
+  #   tei:
+  #     title: "Notes by the Translator"
+  #     author: "Augusta Ada King, Countess of Lovelace"
+  #     publisher: "Richard and John E. Taylor"
+  #     location: "London"
+  #     div_type: note

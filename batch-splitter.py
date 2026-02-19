@@ -240,6 +240,7 @@ def process_file(cfg):
         end_marker      (str)  - text that signals end of content
         output_dir      (str)  - base output directory (default: "output")
         excluded_attrs  (list) - attributes to exclude (negative matching)
+        boundary_mode   (str)  - "auto", "container", or "sibling"
     """
     the_file = cfg["file"]
     element = cfg["elem"]
@@ -256,6 +257,7 @@ def process_file(cfg):
     end_marker = cfg.get("end_marker", "PROJECT GUTENBERG EBOOK")
     base_output = cfg.get("output_dir", "output")
     excluded_attrs = cfg.get("excluded_attrs", [])
+    boundary_mode = cfg.get("boundary_mode", "auto")
 
     is_tei = output_format == "tei"
 
@@ -286,7 +288,26 @@ def process_file(cfg):
     container_elems = ["div"]
     section_count = 0
 
-    if element in container_elems:
+    # Determine processing mode: container (content inside element) vs
+    # sibling (content between boundary markers).
+    #   --boundary-mode=auto      (default) auto-detect based on content length
+    #   --boundary-mode=container  force container mode (div wraps full chapter)
+    #   --boundary-mode=sibling    force sibling mode (div is thin heading wrapper)
+    if boundary_mode == "container":
+        use_container = True
+    elif boundary_mode == "sibling":
+        use_container = False
+    else:
+        # Auto-detect: if the element is a div, sample a few to see if they
+        # contain substantial text or are just heading wrappers.
+        use_container = element in container_elems
+        if use_container and elements:
+            sample = elements[start_pos - 1 : start_pos + 2] if len(elements) >= start_pos else elements[:3]
+            avg_len = sum(len(e.get_text(strip=True)) for e in sample) / max(len(sample), 1)
+            if avg_len < 100:
+                use_container = False
+
+    if use_container:
         section_count = _process_container(
             elements, element, attrib, start_pos, out_path, prefix,
             is_tei, title, author, publisher, location, year,
@@ -469,6 +490,7 @@ def load_corpus_config(config_path):
             "end_marker": entry.get("end_marker", "PROJECT GUTENBERG EBOOK"),
             "output_dir": entry.get("output_dir", default_output),
             "excluded_attrs": entry.get("excluded_attrs", []),
+            "boundary_mode": entry.get("boundary_mode", "auto"),
         }
         configs.append(cfg)
 
@@ -537,6 +559,14 @@ def build_parser():
                           help="TEI div type: chapter, note, poem, letter, section (default: chapter).")
     tei_opts.add_argument("--end-marker", default="PROJECT GUTENBERG EBOOK",
                           help='End-of-text marker. Use "" for non-Gutenberg sources.')
+
+    # Processing mode
+    parser.add_argument("--boundary-mode", default="auto",
+                        choices=["auto", "container", "sibling"],
+                        help="How to extract chapter text. "
+                             "auto: detect automatically (default). "
+                             "container: content is inside the matched element. "
+                             "sibling: content follows the matched element as siblings.")
 
     return parser
 
@@ -622,6 +652,7 @@ def main():
             "end_marker": args.end_marker,
             "output_dir": args.output_dir,
             "excluded_attrs": [],
+            "boundary_mode": args.boundary_mode,
         }
         process_file(cfg)
 
