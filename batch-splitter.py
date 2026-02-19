@@ -258,6 +258,7 @@ def process_file(cfg):
     base_output = cfg.get("output_dir", "output")
     excluded_attrs = cfg.get("excluded_attrs", [])
     boundary_mode = cfg.get("boundary_mode", "auto")
+    limit = cfg.get("limit", 0)  # 0 = no limit
 
     is_tei = output_format == "tei"
 
@@ -313,13 +314,13 @@ def process_file(cfg):
         section_count = _process_container(
             elements, element, attrib, start_pos, out_path, prefix,
             is_tei, title, author, publisher, location, year,
-            div_type, end_marker, excluded_attrs,
+            div_type, end_marker, excluded_attrs, limit,
         )
     else:
         section_count = _process_non_container(
             elements, element, attrib, start_pos, out_path, prefix,
             is_tei, title, author, publisher, location, year,
-            div_type, end_marker,
+            div_type, end_marker, limit,
         )
 
     file_type_label = "TEI" if is_tei else "plain text"
@@ -333,7 +334,7 @@ def process_file(cfg):
 def _process_non_container(
     elements, element, attrib, start_pos, out_path, prefix,
     is_tei, title, author, publisher, location, year,
-    div_type, end_marker,
+    div_type, end_marker, limit=0,
 ):
     """Process files where chapters are delimited by sibling elements (h2, h3, hr, etc.)."""
     # In Jon's original code:
@@ -379,6 +380,8 @@ def _process_non_container(
                         chapter_content, title, author, publisher, location, year,
                     )
                     sections_written += 1
+                    if limit and sections_written >= limit:
+                        return sections_written
                     chapter_count += 1
                 i += 1
                 chapter_content = ""
@@ -395,7 +398,7 @@ def _process_non_container(
 def _process_container(
     elements, element, attrib, start_pos, out_path, prefix,
     is_tei, title, author, publisher, location, year,
-    div_type, end_marker, excluded_attrs,
+    div_type, end_marker, excluded_attrs, limit=0,
 ):
     """Process files where chapters are wrapped in container elements (div, etc.)."""
     # Jon's offset math: if start_pos is 7, then i starts at 2-7 = -5.
@@ -421,6 +424,8 @@ def _process_container(
                 elem_text, title, author, publisher, location, year,
             )
             sections_written += 1
+            if limit and sections_written >= limit:
+                break
 
         i += 1
 
@@ -503,6 +508,7 @@ def load_corpus_config(config_path):
             "output_dir": entry.get("output_dir", default_output),
             "excluded_attrs": entry.get("excluded_attrs", []),
             "boundary_mode": entry.get("boundary_mode", "auto"),
+            "limit": entry.get("limit", 0),
         }
         configs.append(cfg)
 
@@ -547,8 +553,16 @@ def analyze_file(filepath):
     for d in divs:
         for cls in d.get("class", []):
             div_classes[cls] = div_classes.get(cls, 0) + 1
+
+    # Skip div classes that are obviously not chapter boundaries
+    skip_classes = {
+        "footnote", "endnote", "footnotes", "endnotes", "note", "notes",
+        "toc", "contents", "bibliography", "index", "colophon",
+        "poem", "stanza", "verse", "epigraph", "dedication",
+        "sidebar", "nav", "navbar", "header", "footer",
+    }
     for cls, count in sorted(div_classes.items(), key=lambda x: -x[1]):
-        if count >= 3:
+        if count >= 3 and cls.lower() not in skip_classes:
             sample_divs = soup.find_all("div", cls)
             avg_len = sum(len(d.get_text(strip=True)) for d in sample_divs[:5]) / min(len(sample_divs), 5)
             mode = "container" if avg_len >= 100 else "sibling"
@@ -657,24 +671,39 @@ def analyze_file(filepath):
     best = suggestions[0]
     attr_flag = f' --attr {best["attr"]}' if best["attr"] else ""
 
-    # Auto-detect offset: skip leading elements with < 1000 chars
-    # (skips TOC, volume headers, thin front matter)
+    # Auto-detect offset: look for the first element whose heading text
+    # matches a chapter/letter pattern. Fall back to first element with
+    # >= 1000 chars of content.
+    import re
+    chapter_pattern = re.compile(
+        r'^\s*(chapter|chap\.?|letter|book|part|canto|section|act|scene)\s',
+        re.IGNORECASE
+    )
+
     offset = 1
+    # First pass: look for chapter-like heading text
     for j, elem in enumerate(best["elems"]):
-        if best["mode"] == "container":
-            char_count = len(elem.get_text(strip=True))
-        else:
-            char_count = 0
-            for sib in elem.next_siblings:
-                if sib.name == best["elem"]:
-                    break
-                if hasattr(sib, 'get_text'):
-                    char_count += len(sib.get_text(strip=True))
-                elif isinstance(sib, str):
-                    char_count += len(sib.strip())
-        if char_count >= 1000:
+        heading = elem.get_text()[:40].strip()
+        if chapter_pattern.match(heading):
             offset = j + 1
             break
+    else:
+        # Second pass: fall back to first element with substantial content
+        for j, elem in enumerate(best["elems"]):
+            if best["mode"] == "container":
+                char_count = len(elem.get_text(strip=True))
+            else:
+                char_count = 0
+                for sib in elem.next_siblings:
+                    if sib.name == best["elem"]:
+                        break
+                    if hasattr(sib, 'get_text'):
+                        char_count += len(sib.get_text(strip=True))
+                    elif isinstance(sib, str):
+                        char_count += len(sib.strip())
+            if char_count >= 1000:
+                offset = j + 1
+                break
 
     console.print("[bold]Suggested command:[/bold]")
     console.print(f"  python batch-splitter.py --file {filepath} "
@@ -759,6 +788,8 @@ def build_parser():
                              "auto: detect automatically (default). "
                              "container: content is inside the matched element. "
                              "sibling: content follows the matched element as siblings.")
+    parser.add_argument("--limit", type=int, default=0,
+                        help="Maximum number of chapters to output (0 = no limit).")
 
     return parser
 
@@ -849,6 +880,7 @@ def main():
             "output_dir": args.output_dir,
             "excluded_attrs": [],
             "boundary_mode": args.boundary_mode,
+            "limit": args.limit,
         }
         process_file(cfg)
 
