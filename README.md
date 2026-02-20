@@ -2,53 +2,201 @@
 
 ### What is this?
 
-This program aims to allow you to download an HTML version of a book on [Project Gutenberg](https://www.gutenberg.org/) and separate it into chapters for further processing without too much hassle...
+This program splits HTML books from [Project Gutenberg](https://www.gutenberg.org/) (and other sources) into individual chapter files for further processing. It offers two interfaces:
 
-### Assumptions:
-Right now, the code works well with well-formed HTML.  So, it is assumed you are using a document that is well-formed.
+- **`splitter.py`** -- Interactive menu-driven interface. Good for exploring unfamiliar texts.
+- **`batch-splitter.py`** -- Command-line interface with search, download, analyze, and batch processing modes. Recommended for reproducible workflows and corpus building.
 
-If you are processing a file where chapter content is enclosed inside `<div>`, then the program will see the `<div>` and grab all children until the next one (or the end of the file) and save these into a chapter.
+Both produce identical output: one file per chapter, in either plain text or TEI XML format.
 
-If you are processing a file where chapter content is only demarcated by `<h2>` or `<hr>` or something like this, then then program will grab all siblings of these elements until the next one (or the end of the file) and save these into a chapter.
+### Quick start
 
-This is not a perfect system, and improvements are being devised.  One obvious complication is the presence of siblings with the same name... name + attribute detection is planned to fix this.
-  - (2022-05-12: Some improvements implemented. Negative matching is an option for texts where this fails.)
+```bash
+# Install
+git clone https://github.com/jdmartin/gutenberg-text-splitter.git
+cd gutenberg-text-splitter
+poetry install    # or: pip install -r requirements.txt
 
-### A note on saving files:
+# Find a text
+poetry run python batch-splitter.py --search --search-title "Frankenstein" --search-author "Shelley"
 
-In general, browsers have a "save webpage as" feature.  This feature often causes character encoding issues for this program.  I would recommend right-clicking, viewing page source, and copy-pasting the entire contents into input/somefile.html.
+# Download it
+poetry run python batch-splitter.py --download 41445 --save-as frankenstein_1818.html
 
-### An Example of _Bad_ HTML:
+# See how it's structured
+poetry run python batch-splitter.py --analyze input/frankenstein_1818.html
 
-Take [this book](https://www.gutenberg.org/files/68033/68033-h/68033-h.htm) (please). This book uses `<div class="chapter">`, but then only encloses titles in these sections. Books like this require a bit more planning in order to get both title and chapter content.  So far, this has been a rare case, but things like this may happen.
+# Split it
+poetry run python batch-splitter.py --file input/frankenstein_1818.html --elem div --attr chapter --offset 3 --tei
+```
 
-### Caveats:
+### batch-splitter.py modes
 
-The program was designed with a dark background in mind (specifically, #282935), but a light mode version is in the works...
+**Search** the Gutenberg catalog (auto-downloads on first use):
 
-This program isn't _automatic_ as such, as you are still needed to choose an element/attribute to demarcate chapters. (Sugggestions are offered to save time.) But it is hoped that this will one day be improved.  As is, this will still save you flipping through your HTML looking for meaningful elements, and writing a custom script for each text... at least, I hope so. :)
+```bash
+poetry run python batch-splitter.py --search --search-title "Paradise Lost"
+poetry run python batch-splitter.py --search --search-author "Babbage"
+poetry run python batch-splitter.py --search --search-subject "Gothic fiction"
+```
 
-### Ok, Ok, but how do I use it?!
+**Download** a text by Gutenberg ID:
 
-The Setup:
+```bash
+poetry run python batch-splitter.py --download 41445 --save-as frankenstein_1818.html
+```
 
-0. Install the program:
-    - (Recommended) Create a new virtual environment to hold this.
-    - Clone the repo to your new environment.
-    - Install dependencies with `pip install -r requirements.txt`, `poetry install`, or similar.
-1. Drop any HTML formatted book into the input folder, or use one of the built-ins.
-2. Execute the program via `python3 ./splitter.py`
+**Analyze** an HTML file to determine splitting parameters:
 
-Now that the program is running...using the program is a four-part process.
+```bash
+poetry run python batch-splitter.py --analyze input/frankenstein_1818.html
+```
 
-1. Choose a file to work with.
-2. Analyze the file to see what element/attribute you want to select for chapter detection.
-    - N.B. Selecting an element will show you any classes or IDs on elements of that type to help narrow down your choice.
-        - This also gives access to the negative matching option
-3. Once you have decided on your element/attribute pair, you can see samples of those selections to help you choose an offset.
-    - N.B. On irregularly constructed documents, there are often "chapters" that are really just prefaratory matter.  The offset allows you to say how many there and then chapter selections won't start until you've passed an offset number of those elements.
-4. (Optional) Supply a publication year for the text if you'd like to include it in your output directory name.
-5. Now, you can process the file.
-    - Files will be written to output/title/chapter_n
-      - Ex: If your file is called joe.html, then the output is in output/joe/chapter_n.
+This scans the HTML structure and shows candidate elements for chapter detection, ranked by likelihood. For each option it displays sample text, content size, and auto-detection of container vs. boundary-marker mode. It suggests a ready-to-run command with auto-detected offset.
 
+**Split** a single file:
+
+```bash
+poetry run python batch-splitter.py --file input/frankenstein_1818.html \
+  --elem div --attr chapter --offset 3 --year 1818 --tei \
+  --title "Frankenstein" --author "Shelley, Mary (1797-1851)" \
+  --publisher "Lackington et al." --location "London" \
+  --div-type chapter --prefix "1818-ENG18180--Shelley_Mary"
+```
+
+**Batch process** a corpus from a YAML config:
+
+```bash
+poetry run python batch-splitter.py --config shelley_lovelace.yaml
+```
+
+### Splitting options
+
+| Flag | Description |
+|------|-------------|
+| `--elem` | HTML element marking chapter boundaries (e.g., `div`, `h2`, `hr`) |
+| `--attr` | Optional class or ID to filter elements (e.g., `chapter`) |
+| `--offset` | Number of matching elements to skip (front matter, TOCs, etc.) |
+| `--limit` | Maximum number of chapters to write (0 = no limit) |
+| `--boundary-mode` | `auto` (default), `container`, or `sibling` (see below) |
+| `--prefix` | Controls output folder and file naming for pipeline compatibility |
+| `--year` | Publication year, included in output directory name |
+| `--tei` | Output TEI XML instead of plain text |
+| `--end-marker` | Text signaling end of content (default: `PROJECT GUTENBERG EBOOK`) |
+
+### TEI metadata flags
+
+When using `--tei`, these populate the TEI header:
+
+| Flag | Description |
+|------|-------------|
+| `--title` | Work title |
+| `--author` | Author name |
+| `--publisher` | Publisher name |
+| `--location` | Place of publication |
+| `--div-type` | TEI div type: `chapter`, `section`, `book`, `note`, etc. |
+
+### Container vs. sibling mode
+
+Gutenberg HTML uses two patterns for chapter markup:
+
+**Container mode** -- chapter content is inside the matched element:
+```html
+<div class="chapter">
+  <h3>CHAPTER I</h3>
+  <p>It was a dark and stormy night...</p>
+</div>
+```
+
+**Sibling mode** -- the matched element is a boundary marker, content follows as siblings:
+```html
+<h2>CHAPTER I</h2>
+<p>It was a dark and stormy night...</p>
+<p>The rain fell in torrents...</p>
+<h2>CHAPTER II</h2>
+```
+
+By default (`--boundary-mode auto`), the splitter samples element text length and picks the right mode. Use `--boundary-mode container` or `--boundary-mode sibling` to override.
+
+### YAML corpus config
+
+For reproducible corpus building, define all texts in a YAML file:
+
+```yaml
+corpus_name: my-corpus
+output_format: tei
+output_dir: output
+
+texts:
+  - file: input/frankenstein_1818.html
+    elem: div
+    attr: chapter
+    offset: 3
+    year: "1818"
+    boundary_mode: sibling
+    prefix: "1818-ENG18180--Shelley_Mary"
+    tei:
+      title: "Frankenstein; Or, The Modern Prometheus"
+      author: "Shelley, Mary Wollstonecraft (1797-1851)"
+      publisher: "Lackington, Hughes, Harding, Mavor and Jones"
+      location: "London"
+      div_type: chapter
+
+  - file: input/paradise_lost.html
+    elem: div
+    attr: chapter
+    offset: 1
+    year: "1667"
+    prefix: "1667-ENG16670--Milton_John"
+    tei:
+      title: "Paradise Lost"
+      author: "Milton, John (1608-1674)"
+      publisher: "Samuel Simmons"
+      location: "London"
+      div_type: book
+```
+
+See `corpus_example.yaml` for a documented template and `shelley_lovelace.yaml` for a working 15-text corpus config.
+
+### The prefix flag and pipeline compatibility
+
+The `--prefix` flag controls both output folder and file naming. This is useful for matching downstream pipeline conventions. For example:
+
+```bash
+--prefix "1818-ENG18180--Shelley_Mary"
+```
+
+Produces:
+```
+output/1818-ENG18180--Shelley_Mary/
+  1818-ENG18180--Shelley_Mary-chapter_1
+  1818-ENG18180--Shelley_Mary-chapter_2
+  ...
+```
+
+### Interactive splitter (splitter.py)
+
+The original interactive interface is still available:
+
+```bash
+poetry run python splitter.py
+```
+
+This provides a menu-driven workflow for exploring texts, previewing chapter boundaries, and processing files. See the in-app help for details.
+
+### Assumptions
+
+The code works best with well-formed HTML. Gutenberg texts vary in markup quality, so the `--analyze` mode is designed to help you find the right splitting parameters for each text. Typical issues include:
+
+- Thin wrapper divs (older Gutenberg transcriptions use `<div class="chapter"><h3>heading</h3></div>` with content as siblings rather than children)
+- Formatting-class divs that look structural but aren't (e.g., `dsdnote`, `dtablebox`, `dpoemctr`)
+- Inconsistent front matter that requires offset tuning
+- Editorial apparatus mixed in with novel content (use `--limit` to exclude)
+
+### A note on saving files
+
+In general, browsers' "save webpage as" feature can cause character encoding issues. If downloading manually, right-click, view page source, and copy-paste the entire contents into `input/somefile.html`. Or use the built-in download:
+
+```bash
+poetry run python batch-splitter.py --download 41445 --save-as frankenstein_1818.html
+```
