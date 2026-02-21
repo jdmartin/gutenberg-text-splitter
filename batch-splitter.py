@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# IMPORTANT: Run this script with `poetry run python3 batch-splitter.py` (not bare python3).
 """
 batch-splitter.py - Non-interactive batch processing for gutenberg-text-splitter.
 

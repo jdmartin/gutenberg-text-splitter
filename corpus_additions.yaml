@@ -1,0 +1,106 @@
+# corpus_additions.yaml
+# Three texts to add to the Shelley-Lovelace corpus
+#
+# Download before running:
+#   curl -o input/godwin_stleon.html "https://www.gutenberg.org/files/53707/53707-h/53707-h.htm"
+#   curl -o input/kjb.html "https://www.gutenberg.org/files/7999/7999-h/7999-h.htm"
+#
+# Percy Shelley Defence is already processed as PG #5428 (shelley_defence.html)
+# in shelley_lovelace.yaml. See note below.
+#
+# Run:
+#   python3 batch-splitter.py --corpus corpus_additions.yaml --output-dir output
+
+output_dir: output
+
+texts:
+  # ──────────────────────────────────────────────────────────────────
+  # GODWIN, St Leon (1799)
+  # ──────────────────────────────────────────────────────────────────
+  # Strengthens Godwin coverage alongside Caleb Williams. Mary Shelley
+  # acknowledged St Leon's influence on Frankenstein (forbidden knowledge,
+  # isolation). Two Godwin novels let Sextant distinguish author-level
+  # style from specific thematic vocabulary that carried to Frankenstein.
+  # Also enriches negative control space: Lovelace almost certainly
+  # never read St Leon.
+  #
+  # PG #53707. 1831 Colburn & Bentley "Standard Novels" edition.
+  # Original publication 1799; we date to first edition.
+  # Structure: h2 headings for Advertisement, Preface, then chapter
+  # titles ("TRAVELS OF ST. LEON", "CHAP. I", etc.)
+  # The Advertisement (1831) and Preface (1799) are front matter;
+  # offset 3 skips them to start at Chapter I.
+
+  - file: input/godwin_stleon.html          # PG #53707
+    elem: h2
+    offset: 3
+    limit: 47
+    year: "1799"
+    prefix: "1799-ENG17990--Godwin_William"
+    tei:
+      title: "St. Leon: A Tale of the Sixteenth Century"
+      author: "Godwin, William (1756-1836)"
+      publisher: "G. G. and J. Robinson"
+      location: "London"
+      div_type: chapter
+
+  # ──────────────────────────────────────────────────────────────────
+  # KING JAMES BIBLE (1611)
+  # ──────────────────────────────────────────────────────────────────
+  # Pervasive-influence baseline. The KJB is so culturally saturated
+  # that its vocabulary appears everywhere in English prose. Including
+  # it lets Sextant calibrate what "background influence" looks like
+  # vs specific literary transmission. Methodological work: shows the
+  # model can distinguish pervasive cultural influence from targeted
+  # literary influence.
+  #
+  # PG #7999. 66 books, h1 headings ("Book 01 Genesis", etc.)
+  # Each book becomes one TEI section. Verse numbers (01:001:001)
+  # are inline text, not structural elements.
+  # offset 2 skips the title page and TOC.
+
+  - file: input/kjb.html                    # PG #7999
+    elem: h1
+    offset: 2
+    year: "1611"
+    prefix: "1611-ENG16110--KJB"
+    tei:
+      title: "The Holy Bible, King James Version"
+      author: "Anonymous"
+      publisher: "Robert Barker"
+      location: "London"
+      div_type: book
+
+# ──────────────────────────────────────────────────────────────────
+# NOTE ON PERCY SHELLEY, Defence of Poetry (1821)
+# ──────────────────────────────────────────────────────────────────
+# Already processed as part of PG #5428 in shelley_lovelace.yaml:
+#   prefix: 1840-ENG18400--Shelley_Percy
+#   Contains: Defence of Poetry + 9 other essays (10 sections)
+#   Dated 1840 (posthumous publication by Mary Shelley)
+#
+# The full essay collection is preferable to the Defence alone
+# because it gives Sextant more Percy prose for stylistic profiling,
+# which strengthens confound detection. The Defence is section 10
+# of the existing output.
+#
+# If you want the Defence as a STANDALONE text dated 1821 (when
+# written, not published), uncomment below and also add it to
+# the input/ directory. But this would create overlap with the
+# existing Shelley_Percy entry -- the same text appearing in two
+# corpus positions. Decide which dating/framing serves the thesis
+# better before uncommenting.
+#
+#  - file: input/shelley_defence.html        # PG #5428
+#    elem: h2
+#    offset: 2
+#    end_marker: "End of Project Gutenberg"
+#    limit: 1
+#    year: "1821"
+#    prefix: "1821-ENG18210--Shelley_Percy-Defence"
+#    tei:
+#      title: "A Defence of Poetry"
+#      author: "Shelley, Percy Bysshe (1792-1822)"
+#      publisher: "Edward Moxon"
+#      location: "London"
+#      div_type: section
