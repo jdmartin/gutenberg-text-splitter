@@ -142,3 +142,18 @@ output/
 
 # Project-specific: Gutenberg catalog (auto-downloaded, 5MB+)
 meta/pg_catalog.csv
+
+.DS_Store
+
+# Editor backups
+*.bak
+*~
+*.swp
+*.swo
+
+# Working session artefacts (not part of pipeline)
+analysis.txt
+*_only.yaml
+*_additions.yaml
+gap_fills.yaml
+critical_additions.yaml
