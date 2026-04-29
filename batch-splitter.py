@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# IMPORTANT: Run this script with `poetry run python3 batch-splitter.py` (not bare python3).
 """
 batch-splitter.py - Non-interactive batch processing for gutenberg-text-splitter.
 
@@ -21,9 +21,10 @@ Usage:
 
 import argparse
 import os
+import shutil
 import sys
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from rich import print
 from rich.console import Console
 from rich.table import Table
@@ -31,6 +32,22 @@ from rich.table import Table
 import re
 
 console = Console()
+
+# Default threshold for warning about suspiciously small sections.
+# Sections below this word count are flagged as possible content loss.
+DEFAULT_WARN_WORDS = 100
+
+
+def read_file(filepath):
+    """Read a text file, trying UTF-8 first, then Latin-1 fallback."""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return f.read()
+    except UnicodeDecodeError:
+        console.print(f"  [yellow]UTF-8 failed for {filepath}, trying Latin-1...[/yellow]")
+        with open(filepath, "r", encoding="latin-1") as f:
+            return f.read()
+
 
 # ---------------------------------------------------------------------------
 # TEI generation helpers
@@ -159,10 +176,7 @@ def download_gutenberg(book_id, filename=None):
     """
     Download a Gutenberg HTML text by ID into input/.
 
-    Tries two URL formats:
-      1. New HTML5: /cache/epub/{id}/pg{id}-images.html.utf8
-      2. Legacy:    /files/{id}/{id}-h/{id}-h.htm
-
+    Tries URL formats in order, normalizes encoding to UTF-8.
     Returns the path to the downloaded file, or None on failure.
     """
     import requests
@@ -191,8 +205,15 @@ def download_gutenberg(book_id, filename=None):
         try:
             r = requests.get(url, timeout=30)
             if r.status_code == 200:
-                with open(out_path, "wb") as f:
-                    f.write(r.content)
+                # Normalize to UTF-8: try decoding as UTF-8 first, fall back
+                # to Latin-1 (common for legacy Gutenberg .htm files)
+                try:
+                    text = r.content.decode("utf-8")
+                except UnicodeDecodeError:
+                    text = r.content.decode("latin-1")
+                    console.print(f"  [yellow]Re-encoded from Latin-1 to UTF-8[/yellow]")
+                with open(out_path, "w", encoding="utf-8") as f:
+                    f.write(text)
                 console.print(f"  [green]Downloaded:[/green] {out_path} ({len(r.content) // 1024} KB)")
                 return out_path
         except Exception as e:
@@ -222,6 +243,105 @@ def is_end_of_text(text, end_marker):
     return end_marker in text
 
 
+def _filter_to_leaves(elements, element, attrib):
+    """Filter matched elements to leaf nodes only.
+
+    When the same selector matches at multiple nesting levels (e.g.
+    div.chapter wrapping both BOOK-level and CHAPTER-level containers),
+    parent elements contain their children's text, producing stub files
+    with duplicate or near-empty content.
+
+    This function removes any matched element that contains other matched
+    elements as descendants, keeping only the deepest (leaf) matches.
+
+    Returns (leaves, parents_removed) so the caller can log the filtering.
+    """
+    element_set = set(id(e) for e in elements)
+
+    leaves = []
+    parents_removed = []
+    for e in elements:
+        # Check if this element contains any OTHER matched element as a descendant
+        if attrib:
+            nested = e.find_all(element, attrib)
+        else:
+            nested = e.find_all(element)
+        # find_all on a tag searches descendants (not self), so any hit means
+        # this element is a parent wrapping other matches
+        has_nested_match = any(id(n) in element_set for n in nested)
+        if has_nested_match:
+            parents_removed.append(e)
+        else:
+            leaves.append(e)
+
+    return leaves, parents_removed
+
+
+def _quarantine_small_sections(out_path, section_manifest, warn_words):
+    """Move undersized sections to _flagged/ subdirectory for scholarly review.
+
+    Instead of silently dropping or auto-merging small sections (which would
+    make implicit theoretical decisions about textual units), this function
+    quarantines them so the researcher can decide per-file:
+      - paratext (volume title pages, epigraphs) -> delete
+      - structural markers (book dividers) -> delete
+      - alternating headings (CHAP. I. / TITLE) -> merge manually
+      - legitimately short content -> move back to main directory
+
+    Also writes a _manifest.tsv with word counts, status, and content
+    previews for all sections.
+
+    Returns (kept, flagged) counts.
+    """
+    flagged_dir = os.path.join(out_path, "_flagged")
+    kept = 0
+    flagged = 0
+    manifest_entries = []
+
+    for filename, wc in section_manifest:
+        filepath = os.path.join(out_path, filename)
+        if wc < warn_words and os.path.isfile(filepath):
+            # Read content preview (strip TEI markup for readability)
+            preview = _read_content_preview(filepath, 120)
+
+            os.makedirs(flagged_dir, exist_ok=True)
+            shutil.move(filepath, os.path.join(flagged_dir, filename))
+            flagged += 1
+            manifest_entries.append((filename, wc, "FLAGGED", preview))
+        else:
+            kept += 1
+            manifest_entries.append((filename, wc, "ok", ""))
+
+    # Write manifest
+    manifest_path = os.path.join(out_path, "_manifest.tsv")
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        f.write("filename\twords\tstatus\tpreview\n")
+        for filename, wc, status, preview in manifest_entries:
+            safe_preview = preview.replace("\t", " ").replace("\n", " ")
+            f.write(f"{filename}\t{wc}\t{status}\t{safe_preview}\n")
+
+    return kept, flagged
+
+
+def _read_content_preview(filepath, max_chars=120):
+    """Read a content preview from a TEI or plain text file.
+
+    For TEI files, extracts just the div content (skipping headers).
+    Returns a cleaned single-line string.
+    """
+    try:
+        raw = open(filepath, "r", encoding="utf-8").read()
+        # Try to extract div content from TEI
+        match = re.search(r'<div[^>]*>(.+?)</div>', raw, re.DOTALL)
+        if match:
+            preview = match.group(1).strip()[:max_chars]
+        else:
+            preview = raw[:max_chars]
+        return " ".join(preview.split())
+    except Exception:
+        return "(could not read)"
+
+
 def process_file(cfg):
     """
     Process a single HTML file into chapter/section files.
@@ -243,6 +363,7 @@ def process_file(cfg):
         output_dir      (str)  - base output directory (default: "output")
         excluded_attrs  (list) - attributes to exclude (negative matching)
         boundary_mode   (str)  - "auto", "container", or "sibling"
+        warn_words      (int)  - threshold for warning about small sections
     """
     the_file = cfg["file"]
     element = cfg["elem"]
@@ -261,6 +382,7 @@ def process_file(cfg):
     excluded_attrs = cfg.get("excluded_attrs", [])
     boundary_mode = cfg.get("boundary_mode", "auto")
     limit = cfg.get("limit", 0)  # 0 = no limit
+    warn_words = cfg.get("warn_words", DEFAULT_WARN_WORDS)
 
     is_tei = output_format == "tei"
 
@@ -280,8 +402,7 @@ def process_file(cfg):
     os.makedirs(out_path, exist_ok=True)
 
     # Read and parse
-    with open(the_file, "r", encoding="utf-8") as f:
-        contents = f.read()
+    contents = read_file(the_file)
     soup = BeautifulSoup(contents, "html.parser")
 
     # Find elements
@@ -290,8 +411,23 @@ def process_file(cfg):
     else:
         elements = soup.find_all(element)
 
+    # --- Leaf-node filtering ---
+    # When the same selector matches at multiple nesting levels (e.g.
+    # div.chapter for both BOOK and CHAPTER containers), parent elements
+    # produce stub files with duplicate content. Filter to leaves only.
+    elements, parents_removed = _filter_to_leaves(elements, element, attrib)
+    if parents_removed:
+        console.print(
+            f"  [cyan]Nesting detected:[/cyan] {len(parents_removed)} parent element(s) "
+            f"contained other matches and were skipped (keeping {len(elements)} leaves):"
+        )
+        for p in parents_removed[:10]:
+            heading = p.get_text()[:60].strip().replace("\n", " ")
+            console.print(f"    [dim]skipped parent:[/dim] {heading}")
+        if len(parents_removed) > 10:
+            console.print(f"    [dim]...and {len(parents_removed) - 10} more[/dim]")
+
     container_elems = ["div"]
-    section_count = 0
 
     # Determine processing mode: container (content inside element) vs
     # sibling (content between boundary markers).
@@ -312,24 +448,75 @@ def process_file(cfg):
             if avg_len < 100:
                 use_container = False
 
+    # section_manifest: list of (filename, word_count) for every section written
     if use_container:
-        section_count = _process_container(
+        section_manifest = _process_container(
             elements, element, attrib, start_pos, out_path, prefix,
             is_tei, title, author, publisher, location, year,
             div_type, end_marker, excluded_attrs, limit,
         )
     else:
-        section_count = _process_non_container(
+        section_manifest = _process_non_container(
             elements, element, attrib, start_pos, out_path, prefix,
             is_tei, title, author, publisher, location, year,
             div_type, end_marker, limit,
         )
 
+    section_count = len(section_manifest)
+    total_words = sum(wc for _, wc in section_manifest)
+
     file_type_label = "TEI" if is_tei else "plain text"
     console.print(
         f"  [green]Done:[/green] {the_file} -> {out_path}/ "
-        f"({section_count} {div_type}s, {file_type_label})"
+        f"({section_count} {div_type}s, {total_words:,} words, {file_type_label})"
     )
+
+    # Quarantine undersized sections for scholarly review
+    if warn_words > 0 and section_manifest:
+        small = [(name, wc) for name, wc in section_manifest if wc < warn_words]
+        if small:
+            kept, flagged_count = _quarantine_small_sections(
+                out_path, section_manifest, warn_words
+            )
+            console.print(
+                f"  [yellow]FLAGGED: {flagged_count}/{section_count} sections "
+                f"below {warn_words} words moved to _flagged/ for review:[/yellow]"
+            )
+            # Show each flagged file with content preview
+            for name, wc in small:
+                flagged_path = os.path.join(out_path, "_flagged", name)
+                preview = ""
+                if os.path.isfile(flagged_path):
+                    preview = _read_content_preview(flagged_path, 80)
+                console.print(
+                    f"    [yellow]{name}[/yellow] ({wc} words)"
+                    + (f'  [dim]"{preview}"[/dim]' if preview else "")
+                )
+
+            console.print(
+                f"  [cyan]Review:[/cyan] {out_path}/_manifest.tsv"
+            )
+            console.print(
+                f"  [cyan]To restore:[/cyan] mv {out_path}/_flagged/FILENAME {out_path}/"
+            )
+
+            # Extra alarm: if majority of sections are tiny, it's almost
+            # certainly a splitting bug, not just a few short poems
+            pct = len(small) / len(section_manifest) * 100
+            if pct > 50:
+                console.print(
+                    f"  [bold red]ALERT: {pct:.0f}% of sections are undersized. "
+                    f"The split element is probably wrong for this file. "
+                    f"Try: poetry run python3 batch-splitter.py --analyze {the_file}[/bold red]"
+                )
+        else:
+            # No small sections -- still write manifest for completeness
+            manifest_path = os.path.join(out_path, "_manifest.tsv")
+            with open(manifest_path, "w", encoding="utf-8") as f:
+                f.write("filename\twords\tstatus\tpreview\n")
+                for filename, wc in section_manifest:
+                    f.write(f"{filename}\t{wc}\tok\t\n")
+
     return True
 
 
@@ -338,63 +525,89 @@ def _process_non_container(
     is_tei, title, author, publisher, location, year,
     div_type, end_marker, limit=0,
 ):
-    """Process files where chapters are delimited by sibling elements (h2, h3, hr, etc.)."""
-    # In Jon's original code:
-    #   i tracks position in the element list (1-indexed)
-    #   chapter_count tracks the output file number (1-indexed)
-    #   start_pos is the position at which we start writing (skip elements before it)
-    chapter_content = ""
-    i = 1
-    chapter_count = 1
-    sections_written = 0
+    """Process files where chapters are delimited by boundary elements (h2, h3, hr, etc.).
 
-    for elem in list(elements):
-        chapter_content = elem.get_text()
+    Walks the DOM in document order, attributing each text node to the most
+    recent boundary element seen. This works whether the boundary elements are
+    all top-level siblings or nested at varying depths within wrapper containers.
+    Returns a manifest: list of (filename, word_count) tuples.
+    """
+    manifest = []
+    elements_list = list(elements)
+    if not elements_list:
+        return manifest
 
-        for sibling in elem.next_siblings:
-            # Check for end of text
-            try:
-                sibling_text = sibling.text
-            except AttributeError:
-                sibling_text = str(sibling)
+    elem_id_set = {id(e) for e in elements_list}
 
-            if end_marker and is_end_of_text(sibling_text, end_marker):
-                if i >= start_pos:
-                    _write_chapter(
-                        out_path, prefix, is_tei, div_type, chapter_count,
-                        chapter_content, title, author, publisher, location, year,
-                    )
-                    sections_written += 1
-                    chapter_count += 1
-                i += 1
-                return sections_written
+    # Find a common ancestor that contains all boundary elements.
+    def _is_descendant(node, ancestor):
+        p = node.parent
+        while p is not None:
+            if p is ancestor:
+                return True
+            p = p.parent
+        return False
 
-            # Check if we've hit the next chapter boundary or end of siblings
-            try:
-                next_elem_name = sibling.next_element.name if sibling.next_element else None
-            except AttributeError:
-                next_elem_name = None
+    root = elements_list[0].parent
+    while root is not None:
+        if all(_is_descendant(e, root) or e is root for e in elements_list):
+            break
+        root = root.parent
+    if root is None:
+        root = elements_list[0].parent
 
-            if next_elem_name == element or sibling.next_sibling is None:
-                if i >= start_pos:
-                    _write_chapter(
-                        out_path, prefix, is_tei, div_type, chapter_count,
-                        chapter_content, title, author, publisher, location, year,
-                    )
-                    sections_written += 1
-                    if limit and sections_written >= limit:
-                        return sections_written
-                    chapter_count += 1
-                i += 1
-                chapter_content = ""
+    # Walk document-order descendants, accumulating text per chapter.
+    chapter_text = ['' for _ in elements_list]
+    chapter_idx = -1
+    end_hit = False
+    last_end_chapter = -1
+
+    for node in root.descendants:
+        if isinstance(node, Tag):
+            if id(node) in elem_id_set:
+                chapter_idx = elements_list.index(node)
+                chapter_text[chapter_idx] += node.get_text()
+            # Other tags: their text is captured via NavigableString descendants.
+            continue
+        if isinstance(node, NavigableString):
+            if chapter_idx < 0:
+                continue
+            # Skip text inside any boundary element (already captured via get_text).
+            in_boundary = False
+            p = node.parent
+            while p is not None and p is not root:
+                if id(p) in elem_id_set:
+                    in_boundary = True
+                    break
+                p = p.parent
+            if in_boundary:
+                continue
+            if end_marker and is_end_of_text(str(node), end_marker):
+                end_hit = True
+                last_end_chapter = chapter_idx
                 break
-            else:
-                try:
-                    chapter_content += sibling.get_text()
-                except AttributeError:
-                    chapter_content += str(sibling)
+            chapter_text[chapter_idx] += str(node)
 
-    return sections_written
+    # Emit chapters subject to start_pos, limit, and end_marker truncation.
+    # Matches original semantics: chapter_count restarts at 1 from start_pos.
+    chapter_count = 1
+    written = 0
+    for idx, content in enumerate(chapter_text):
+        if (idx + 1) < start_pos:
+            continue
+        if end_hit and idx > last_end_chapter:
+            break
+        result = _write_chapter(
+            out_path, prefix, is_tei, div_type, chapter_count,
+            content, title, author, publisher, location, year,
+        )
+        manifest.append(result)
+        chapter_count += 1
+        written += 1
+        if limit and written >= limit:
+            break
+
+    return manifest
 
 
 def _process_container(
@@ -402,11 +615,10 @@ def _process_container(
     is_tei, title, author, publisher, location, year,
     div_type, end_marker, excluded_attrs, limit=0,
 ):
-    """Process files where chapters are wrapped in container elements (div, etc.)."""
-    # Jon's offset math: if start_pos is 7, then i starts at 2-7 = -5.
-    # After 6 increments, i reaches 1 and we start writing.
+    """Process files where chapters are wrapped in container elements (div, etc.).
+    Returns a manifest: list of (filename, word_count) tuples."""
     i = 2 - start_pos
-    sections_written = 0
+    manifest = []
 
     for elem in list(elements):
         # Check for end of text
@@ -419,19 +631,18 @@ def _process_container(
             break
 
         # Each matched container element IS a chapter/section.
-        # Grab its full text content.
         if i >= 1:
-            _write_chapter(
+            result = _write_chapter(
                 out_path, prefix, is_tei, div_type, i,
                 elem_text, title, author, publisher, location, year,
             )
-            sections_written += 1
-            if limit and sections_written >= limit:
+            manifest.append(result)
+            if limit and len(manifest) >= limit:
                 break
 
         i += 1
 
-    return sections_written
+    return manifest
 
 
 def _write_chapter(
@@ -443,6 +654,8 @@ def _write_chapter(
     If prefix is set, filenames are: {prefix}-{div_type}_{n}
     Otherwise, TEI files are: tei_{div_type}_{n}
     and plain files are: {div_type}_{n}
+
+    Returns (filename, word_count) tuple.
     """
     if prefix:
         filename = f"{prefix}-{div_type}_{n}"
@@ -451,11 +664,15 @@ def _write_chapter(
     else:
         filename = f"{div_type}_{n}"
 
+    word_count = len(content.split())
+
     if is_tei:
         tei_head = make_tei_head(title, author, publisher, location, year, div_type, n)
         write_section(os.path.join(out_path, filename), content, tei_head)
     else:
         write_section(os.path.join(out_path, filename), content)
+
+    return (filename, word_count)
 
 
 # ---------------------------------------------------------------------------
@@ -476,6 +693,7 @@ def load_corpus_config(config_path):
     corpus_name = raw.get("corpus_name", "corpus")
     default_format = raw.get("output_format", "plain")
     default_output = raw.get("output_dir", "output")
+    default_warn_words = raw.get("warn_words", DEFAULT_WARN_WORDS)
     texts = raw.get("texts", [])
 
     configs = []
@@ -511,6 +729,7 @@ def load_corpus_config(config_path):
             "excluded_attrs": entry.get("excluded_attrs", []),
             "boundary_mode": entry.get("boundary_mode", "auto"),
             "limit": entry.get("limit", 0),
+            "warn_words": entry.get("warn_words", default_warn_words),
         }
         configs.append(cfg)
 
@@ -527,8 +746,7 @@ def analyze_file(filepath):
         console.print(f"[red]Error:[/red] File not found: {filepath}")
         return
 
-    with open(filepath, "r", encoding="utf-8") as f:
-        soup = BeautifulSoup(f.read(), "html.parser")
+    soup = BeautifulSoup(read_file(filepath), "html.parser")
 
     basename = os.path.basename(filepath)
     console.print(f"\n[bold]Analyzing:[/bold] {basename}\n")
@@ -827,6 +1045,9 @@ def build_parser():
                              "sibling: content follows the matched element as siblings.")
     parser.add_argument("--limit", type=int, default=0,
                         help="Maximum number of chapters to output (0 = no limit).")
+    parser.add_argument("--warn-words", type=int, default=DEFAULT_WARN_WORDS,
+                        help=f"Warn about sections below this word count (default: {DEFAULT_WARN_WORDS}). "
+                             "Set to 0 to disable warnings.")
 
     return parser
 
@@ -921,6 +1142,7 @@ def main():
             "excluded_attrs": [],
             "boundary_mode": args.boundary_mode,
             "limit": args.limit,
+            "warn_words": args.warn_words,
         }
         process_file(cfg)
 
