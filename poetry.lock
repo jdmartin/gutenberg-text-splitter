@@ -176,14 +176,14 @@ files = [
 
 [[package]]
 name = "idna"
-version = "3.16"
+version = "3.17"
 description = "Internationalized Domain Names in Applications (IDNA)"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "idna-3.16-py3-none-any.whl", hash = "sha256:cc246e3a3f89580c3a951b5ad298ca4638078b2cdd4f115654332b5c26daded5"},
-    {file = "idna-3.16.tar.gz", hash = "sha256:d7a6da03db833450fca25d2358ac9ff06cd624577a4aea3a596d5c0f77b8e03d"},
+    {file = "idna-3.17-py3-none-any.whl", hash = "sha256:466e48829084efe2548012b855df21540b96f2e20e51bd124c851536556a592c"},
+    {file = "idna-3.17.tar.gz", hash = "sha256:5eb0cb53bc467c12eadcf6de83163ad8527cec9416f44b9b61b19caedad2b87f"},
 ]
 
 [package.extras]
@@ -784,4 +784,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "098696e1d986835a6b86cb5d39743c021d12ea97ff924ddbf4dd7b0d01d6fe84"
+content-hash = "acf8e9d0f9cacf3ace1964572cb30626a23c88ce5a12befb48089a8860488b9c"
