@@ -1,4 +1,5 @@
 import os
+import zipfile
 from datetime import datetime, timedelta
 from os import path
 from os.path import exists
@@ -93,16 +94,63 @@ def get_selection_by_id(type_search, list_of_ids, results):
         get_selection_by_id(type_search, list_of_ids, results)
         
 def download_book_by_id(book_id, filename):
-    #Sample Format for HTML File: https://www.gutenberg.org/files/1000/1000-h/1000-h.htm
-    #Sample Format for HTML5 File: https://www.gutenberg.org/cache/epub/68033/pg68033-images.html.utf8
-    url = f'https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-images.html.utf8'
-
-    r = requests.get(url, allow_redirects=False, timeout=10)
-    if r.status_code == 404:
-        print("\n\nSorry, I can't find an HTML version of that text.")
-        input("Press enter to continue...\n")
+    # 1. Try the modern ZIP format first
+    zip_url = f'https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}-h.zip'
+    print(f"Checking modern ZIP format for book {book_id}...")
+    r = requests.get(zip_url, allow_redirects=True, timeout=10)
+    
     if r.status_code == 200:
-        open(f'input/{filename}.html', 'wb').write(r.content)
+        # Save and extract the zip file
+        zip_path = f'input/{book_id}.zip'
+        with open(zip_path, 'wb') as f:
+            f.write(r.content)
+        extract_html_from_zip(zip_path, filename)
+        return
+
+    # 2. If ZIP returns 404, fall back to the legacy direct HTML format
+    print(f"ZIP not found (Status {r.status_code}). Trying legacy HTML format...")
+    legacy_url = f'https://www.gutenberg.org/files/{book_id}/{book_id}-h/{book_id}-h.htm'
+    r_legacy = requests.get(legacy_url, allow_redirects=True, timeout=10)
+    
+    if r_legacy.status_code == 200:
+        target_path = os.path.join('input', f'{filename}.html')
+        with open(target_path, 'wb') as f:
+            f.write(r_legacy.content)
+        print(f"\nSuccessfully downloaded and saved as input/{filename}.html (Legacy format)!")
+        return
+
+    # 3. If both attempts fail, notify the user
+    print("\n\nSorry, I can't find an HTML version of that text in either format.")
+    input("Press enter to continue...\n")
+
+def extract_html_from_zip(zip_path, filename):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        # Find the .html or .htm file inside the zip archive
+        namelist = zip_ref.namelist()
+        html_files = [name for name in namelist if name.endswith(('.html', '.htm')) and not name.startswith('__MACOSX')]
+        
+        if html_files:
+            # Extract the main HTML file
+            extracted_path = zip_ref.extract(html_files[0], 'input/')
+            
+            # Define target path for the final HTML file
+            target_path = os.path.join('input', f'{filename}.html')
+            
+            # Move/rename the extracted file to the user's chosen filename if paths differ
+            if os.path.abspath(extracted_path) != os.path.abspath(target_path):
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                os.rename(extracted_path, target_path)
+            
+            # Clean up the temporary zip file
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+                
+            print(f"\nSuccessfully downloaded and saved as input/{filename}.html!")
+        else:
+            print("\nCould not find an HTML file inside the downloaded zip archive.")
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
 
 def update_the_catalog():
     cat_url = 'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv'
